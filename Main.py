@@ -96,7 +96,7 @@ def display_all_leaves():
 
     # Highlight approved leaves
     def highlight_approved(row):
-        return ['background-color: lightgreen' if row['Duyệt'] == '1' else '' for _ in row]
+        return ['background-color: lightgreen' if row['Duyệt'] == 'Duyệt' else '' for _ in row]
 
     st.write("### Danh sách đăng ký phép:")
     if not leave_df.empty:
@@ -203,8 +203,52 @@ def display_registration_form():
 
 # Admin approval page
 def admin_approval_page():
-    st.write("### Duyệt phép")
-    st.write("Chức năng duyệt phép đang được phát triển.")
+    # Fetch leave data
+    leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+
+    # Ensure required columns exist
+    required_columns = ['maNVYT', 'tenNhanVien', 'ngayDangKy', 'loaiPhep', 'thoiGianDangKy', 'DuyetPhep']
+    for col in required_columns:
+        if col not in leave_df.columns:
+            leave_df[col] = ""  # Add missing columns with default values
+
+    # Rename columns for display
+    leave_df = leave_df.rename(columns={
+        'tenNhanVien': 'Họ tên',
+        'ngayDangKy': 'Ngày đăng ký',
+        'loaiPhep': 'Loại phép',
+        'thoiGianDangKy': 'Thời gian đăng ký',
+        'DuyetPhep': 'Duyệt'
+    })
+
+    st.write("### Danh sách đăng ký phép (Admin):")
+    if not leave_df.empty:
+        # Iterate over rows to display with a "Duyệt" button for each row
+        for index, row in leave_df.iterrows():
+            # Display the row information
+            st.write(f"""
+                **Họ tên:** {row['Họ tên']}  
+                **Ngày đăng ký:** {row['Ngày đăng ký']}  
+                **Loại phép:** {row['Loại phép']}  
+                **Thời gian đăng ký:** {row['Thời gian đăng ký']}  
+                **Duyệt:** {row['Duyệt']}
+            """)
+            
+            # "Duyệt" button
+            if st.button("Duyệt", key=f"approve_{index}"):
+                # Update the specific row in the Google Sheet
+                row_index = index + 2  # Account for 1-based indexing in Google Sheets and header row
+                sheets_service.spreadsheets().values().update(
+                    spreadsheetId=LEAVE_SHEET_ID,
+                    range=f"Sheet1!F{row_index}:F{row_index}",
+                    valueInputOption="RAW",
+                    body={"values": [["1"]]}  # Set DuyetPhep to 1
+                ).execute()
+                st.success(f"Duyệt thành công cho {row['Họ tên']}")
+                st.experimental_rerun()  # Refresh the page to show updated data
+    else:
+        st.write("Không có đăng ký phép nào.")
+
 
 # Main app logic
 if not st.session_state.get('is_logged_in', False):
