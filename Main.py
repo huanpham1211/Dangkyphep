@@ -395,7 +395,7 @@ else:
     # Define pages
     pages = ["Danh sách đăng ký phép", "Phép của tôi", "Đăng ký phép mới"]
     if role == "admin":
-        pages.append(["Duyệt phép", "Hủy diệt phép"])
+        pages.extend(["Duyệt phép", "Hủy duyệt phép"])  # Extend list for admin pages
 
     # Sidebar navigation
     page = st.sidebar.radio("Chọn trang", pages)
@@ -413,7 +413,7 @@ else:
     elif page == "Duyệt phép" and role == "admin":
         st.subheader("Duyệt phép")  # Smaller than st.title
         admin_approval_page()
-    elif page == "Hủy diệt phép" and role == "admin":
+    elif page == "Hủy duyệt phép" and role == "admin":
         st.subheader("Hủy duyệt phép")  # Smaller than st.title
         admin_disapproved_leaves()
 
