@@ -42,12 +42,21 @@ def fetch_sheet_data(sheet_id, range_name):
     values = result.get('values', [])
     
     if not values:
-        st.error("No data found.")
+        st.error("No data found in the specified range.")
         return pd.DataFrame()
-    else:
-        headers = values[0]
-        data = values[1:]
-        return pd.DataFrame(data, columns=headers)
+    
+    headers = values[0]
+    data = values[1:]
+
+    # Ensure data matches the headers
+    if any(len(row) != len(headers) for row in data):
+        st.error("Mismatch between data rows and headers in the Google Sheet.")
+        st.write("Headers:", headers)
+        st.write("Sample Rows:", data[:5])
+        return pd.DataFrame()
+
+    return pd.DataFrame(data, columns=headers)
+
 
 # Function to append data to a Google Sheet
 def append_to_sheet(sheet_id, range_name, values):
