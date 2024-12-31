@@ -178,35 +178,52 @@ def display_user_leaves():
             'nguoiHuy': 'Người hủy'
         })
 
-        # Get the current date to calculate which 6-month period we are in
-        current_date = pd.Timestamp.now()
-        first_half_end = pd.Timestamp(year=current_date.year, month=6, day=30)
-        second_half_start = pd.Timestamp(year=current_date.year, month=7, day=1)
+        # Date filter
+        st.write("### Lọc theo thời gian:")
+        col1, col2 = st.columns(2)
+        current_year = pd.Timestamp.now().year
+        with col1:
+            start_date = st.date_input(
+                "Ngày bắt đầu", 
+                value=pd.Timestamp(year=current_year, month=1, day=1), 
+                key="start_date"
+            )
+        with col2:
+            end_date = st.date_input(
+                "Ngày kết thúc", 
+                value=pd.Timestamp(year=current_year, month=12, day=31), 
+                key="end_date"
+            )
 
-        # Determine which 6-month period we are in
-        if current_date <= first_half_end:
-            period_start = pd.Timestamp(year=current_date.year, month=1, day=1)
-            period_end = first_half_end
-        else:
-            period_start = second_half_start
-            period_end = pd.Timestamp(year=current_date.year, month=12, day=31)
-
-        # Filter cancellations within the current 6-month period and by the current user
-        user_cancellations = user_leaves[
-            (user_leaves['Hủy phép'] == 'Hủy') &
-            (user_leaves['Người hủy'] == user_maNVYT) &
-            (user_leaves['Ngày đăng ký'] >= period_start) &
-            (user_leaves['Ngày đăng ký'] <= period_end)
+        # Filter leaves within the selected date range
+        filtered_leaves = user_leaves[
+            (user_leaves['Ngày đăng ký'] >= pd.Timestamp(start_date)) &
+            (user_leaves['Ngày đăng ký'] <= pd.Timestamp(end_date))
         ]
 
-        canceled_count = user_cancellations.shape[0]
+        # Display filtered leaves
+        st.write("### Danh sách phép của bạn:")
+        if not filtered_leaves.empty:
+            st.dataframe(
+                filtered_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt', 'Hủy phép']],
+                use_container_width=True,
+                height=600
+            )
+        else:
+            st.write("Không có phép nào được đăng ký trong khoảng thời gian này.")
+
+        # Allow the user to cancel a maximum of 2 leaves per period
+        canceled_count = filtered_leaves[
+            (filtered_leaves['Hủy phép'] == 'Hủy') &
+            (filtered_leaves['Người hủy'] == user_maNVYT)
+        ].shape[0]
         max_cancellations_per_period = 2  # Easy to change cancellation limit here
 
         if canceled_count < max_cancellations_per_period:
             st.write(f"Bạn có thể hủy thêm {max_cancellations_per_period - canceled_count} lần trong giai đoạn này.")
-            
+
             # Filter leaves where 'Hủy phép' is empty
-            cancellable_leaves = user_leaves[user_leaves['Hủy phép'].isnull() | (user_leaves['Hủy phép'] == "")]
+            cancellable_leaves = filtered_leaves[filtered_leaves['Hủy phép'].isnull() | (filtered_leaves['Hủy phép'] == "")]
             
             # Allow user to select a leave to cancel
             if not cancellable_leaves.empty:
@@ -232,6 +249,7 @@ def display_user_leaves():
             st.warning("Bạn đã đạt giới hạn hủy phép trong giai đoạn này.")
     else:
         st.write("Không có phép nào được đăng ký bởi bạn.")
+
 
 
 
