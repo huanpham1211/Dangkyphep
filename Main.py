@@ -91,9 +91,13 @@ def display_all_leaves():
     # Horizontal layout for date filters
     col1, col2 = st.columns(2)
     with col1:
-        start_date = st.date_input("Ngày bắt đầu", value=pd.Timestamp.now().normalize())
+        start_date = st.date_input("Ngày bắt đầu", value=pd.Timestamp.now().normalize(), key="start_date")
     with col2:
-        end_date = st.date_input("Ngày kết thúc", value=pd.Timestamp.now().normalize())
+        end_date = st.date_input(
+            "Ngày kết thúc",
+            value=(pd.Timestamp(start_date) + pd.DateOffset(months=6)).normalize(),
+            key="end_date"
+        )
 
     # Filter rows by the date range
     filtered_leaves = leave_df[
@@ -232,10 +236,17 @@ def admin_approval_page():
     # Convert `ngayDangKy` to datetime for filtering
     leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
 
-    # Add date filter
+    # Side-by-side layout for date filters
     st.write("### Bộ lọc thời gian:")
-    start_date = st.date_input("Ngày bắt đầu", value=pd.Timestamp.now().normalize())
-    end_date = st.date_input("Ngày kết thúc", value=pd.Timestamp.now().normalize())
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input("Ngày bắt đầu", value=pd.Timestamp.now().normalize(), key="start_date")
+    with col2:
+        end_date = st.date_input(
+            "Ngày kết thúc", 
+            value=(pd.Timestamp.now() + pd.DateOffset(months=6)).normalize(),  # Default 6 months from now
+            key="end_date"
+        )
 
     # Filter rows where `DuyetPhep` and `HuyPhep` are empty, and `ngayDangKy` falls within the selected range
     filtered_leaves = leave_df[
@@ -280,6 +291,7 @@ def admin_approval_page():
                 ].sort_values(by='ngayDangKy', ascending=True)  # Re-apply filters
     else:
         st.write("Không có đăng ký phép nào trong khoảng thời gian này.")
+
 
 
 
