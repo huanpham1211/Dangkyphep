@@ -79,18 +79,70 @@ def check_login(username, password):
         return user.iloc[0]
     return None
 
-# Display user registrations
-def display_user_registrations():
-    st.session_state['registration_df'] = fetch_sheet_data(REGISTRATION_SHEET_ID, REGISTRATION_SHEET_RANGE)
-    registration_df = st.session_state['registration_df']
-    user_registrations = registration_df[registration_df['maNVYT'] == str(st.session_state['user_info']['maNVYT'])]
+# Display all leaves with highlighting for approved ones
+def display_all_leaves():
+    leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
 
-    st.write("### Chỉ tiêu đã đăng ký:")
-    if not user_registrations.empty:
-        user_registrations = user_registrations.rename(columns={'Target': 'Chỉ tiêu', 'TimeStamp': 'Thời gian đăng ký'})
-        st.dataframe(user_registrations[['Chỉ tiêu', 'Thời gian đăng ký']])
+    # Rename columns for display
+    leave_df = leave_df.rename(columns={
+        'tenNhanVien': 'Họ tên',
+        'ngayDangKy': 'Ngày đăng ký',
+        'thoiGianDangKy': 'Thời gian đăng ký',
+        'DuyetPhep': 'Duyệt'
+    })
+
+    # Apply row highlighting for approved leaves
+    def highlight_approved(row):
+        return ['background-color: lightgreen' if row['Duyệt'] == '1' else '' for _ in row]
+
+    st.write("### Danh sách đăng ký phép:")
+    if not leave_df.empty:
+        styled_df = leave_df[['Họ tên', 'Ngày đăng ký', 'Thời gian đăng ký', 'Duyệt']].style.apply(highlight_approved, axis=1)
+        st.dataframe(styled_df, use_container_width=True)
     else:
-        st.write("Bạn chưa đăng ký chỉ tiêu nào!")
+        st.write("Không có đăng ký phép nào.")
+
+# Display user's leaves with the ability to cancel
+def display_user_leaves():
+    leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+    user_info = st.session_state['user_info']
+
+    # Filter only user's leaves
+    user_leaves = leave_df[leave_df['maNVYT'] == str(user_info['maNVYT'])]
+
+    st.write("### Danh sách phép của bạn:")
+    if not user_leaves.empty:
+        # Rename columns for display
+        user_leaves = user_leaves.rename(columns={
+            'tenNhanVien': 'Họ tên',
+            'ngayDangKy': 'Ngày đăng ký',
+            'thoiGianDangKy': 'Thời gian đăng ký',
+            'DuyetPhep': 'Duyệt',
+            'HuyPhep': 'Hủy phép'
+        })
+        
+        # Display user's leaves
+        st.dataframe(user_leaves[['Họ tên', 'Ngày đăng ký', 'Thời gian đăng ký', 'Duyệt', 'Hủy phép']], use_container_width=True)
+
+        # Allow cancellation if the user hasn't already canceled 2 leaves
+        canceled_count = user_leaves[user_leaves['Hủy phép'] == '1'].shape[0]
+        if canceled_count < 2:
+            st.write(f"Bạn có thể hủy thêm {2 - canceled_count} lần.")
+            cancel_row = st.selectbox("Chọn dòng để hủy:", user_leaves.index, format_func=lambda x: f"Ngày đăng ký: {user_leaves.loc[x, 'Ngày đăng ký']}")
+            if st.button("Hủy phép"):
+                leave_df.at[cancel_row, 'HuyPhep'] = '1'
+                leave_df.at[cancel_row, 'nguoiHuy'] = user_info['maNVYT']
+                # Update Google Sheet
+                body = {'values': leave_df.values.tolist()}
+                sheets_service.spreadsheets().values().update(
+                    spreadsheetId=LEAVE_SHEET_ID,
+                    range=LEAVE_SHEET_RANGE,
+                    valueInputOption="RAW",
+                    body=body
+                ).execute()
+                st.success("Đã hủy phép thành công.")
+        else:
+            st.warning("Bạn đã đạt giới hạn hủy phép.")
 
 # Registration form for leaves
 def display_registration_form():
@@ -148,18 +200,24 @@ else:
     user_info = st.session_state['user_info']
     role = user_info['chucVu']
 
-    pages = ["CHỈ TIÊU KPI ĐÃ ĐĂNG KÝ", "ĐĂNG KÝ MỚI"]
+    # Define pages
+    pages = ["Danh sách đăng ký phép", "Phép của tôi", "Đăng ký phép mới"]
     if role == "admin":
         pages.append("Duyệt phép")
 
+    # Sidebar navigation
     page = st.sidebar.radio("", pages)
 
-    if page == "CHỈ TIÊU KPI ĐÃ ĐĂNG KÝ":
-        st.title("CHỈ TIÊU KPI ĐÃ ĐĂNG KÝ")
-        display_user_registrations()
-    elif page == "ĐĂNG KÝ MỚI":
-        st.title("ĐĂNG KÝ MỚI")
+    if page == "Danh sách đăng ký phép":
+        st.title("Danh sách đăng ký phép")
+        display_all_leaves()
+    elif page == "Phép của tôi":
+        st.title("Phép của tôi")
+        display_user_leaves()
+    elif page == "Đăng ký phép mới":
+        st.title("Đăng ký phép mới")
         display_registration_form()
     elif page == "Duyệt phép" and role == "admin":
         st.title("Duyệt phép")
         admin_approval_page()
+
