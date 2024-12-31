@@ -371,17 +371,18 @@ else:
 
     # Page navigation logic
     if page == "Danh sách đăng ký phép":
-        st.title("Danh sách đăng ký phép")
+        st.subheader("Danh sách đăng ký phép")  # Smaller than st.title
         display_all_leaves()
     elif page == "Phép của tôi":
-        st.title("Phép của tôi")
+        st.subheader("Phép của tôi")  # Smaller than st.title
         display_user_leaves()
     elif page == "Đăng ký phép mới":
-        st.title("Đăng ký phép mới")
+        st.subheader("Đăng ký phép mới")  # Smaller than st.title
         display_registration_form()
     elif page == "Duyệt phép" and role == "admin":
-        st.title("Duyệt phép")
+        st.subheader("Duyệt phép")  # Smaller than st.title
         admin_approval_page()
+
 
     # Footer
     st.sidebar.markdown("---")
