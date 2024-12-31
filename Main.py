@@ -8,11 +8,6 @@ from googleapiclient.discovery import build
 import time
 
 # Google Sheets document IDs and ranges
-KPI_SHEET_ID = '1f38fTxOkuP2PFKDSyrxp1aRXi8iz9rZqMJesDkJjC14'
-KPI_SHEET_RANGE = 'Sheet1'
-
-REGISTRATION_SHEET_ID = '1Cq6J5gOqErerq4M4JqkwiE5aOC-bg1s6uqPB41_DzXs'
-REGISTRATION_SHEET_RANGE = 'Sheet1'
 
 NHANVIEN_SHEET_ID = '1kzfwjA0nVLFoW8T5jroLyR2lmtdZp8eaYH-_Pyb0nbk'
 NHANVIEN_SHEET_RANGE = 'Sheet1'
@@ -70,12 +65,6 @@ def append_to_sheet(sheet_id, range_name, values):
 # Load Google Sheets data into Streamlit session state
 if 'nhanvien_df' not in st.session_state:
     st.session_state['nhanvien_df'] = fetch_sheet_data(NHANVIEN_SHEET_ID, NHANVIEN_SHEET_RANGE)
-
-if 'kpitarget_df' not in st.session_state:
-    st.session_state['kpitarget_df'] = fetch_sheet_data(KPI_SHEET_ID, KPI_SHEET_RANGE)
-
-if 'registration_df' not in st.session_state:
-    st.session_state['registration_df'] = fetch_sheet_data(REGISTRATION_SHEET_ID, REGISTRATION_SHEET_RANGE)
 
 # Login helper function
 def check_login(username, password):
