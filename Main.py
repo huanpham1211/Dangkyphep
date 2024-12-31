@@ -340,7 +340,7 @@ def admin_disapproved_leaves():
 
     # Add filter for `tenNhanVien`
     st.write("### Lọc theo nhân viên:")
-    employee_options = nhanvien_df['tenNhanVien'].unique().tolist()  # Fetch all unique names
+    employee_options = sorted(nhanvien_df['tenNhanVien'].unique().tolist())  # Fetch and sort all unique names
     employee_filter = st.selectbox("Chọn nhân viên", options=["Tất cả"] + employee_options, key="employee_filter")
 
     # Apply the employee filter
@@ -379,8 +379,11 @@ def admin_disapproved_leaves():
                 ).execute()
                 st.success(f"Hủy phép thành công cho {row['Họ tên']}.")
 
-                # Refresh the page to reflect the updated data
-                st.experimental_rerun()
+                # Re-fetch data to reflect the updated table
+                leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+                approved_leaves = leave_df[leave_df['DuyetPhep'] == 'Duyệt']
+                if employee_filter != "Tất cả":
+                    approved_leaves = approved_leaves[approved_leaves['tenNhanVien'] == employee_filter]
     else:
         st.write("Không có phép nào đã được duyệt.")
 
