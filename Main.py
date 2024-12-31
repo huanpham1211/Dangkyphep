@@ -114,7 +114,10 @@ def display_user_leaves():
 
     # Ensure the `maNVYT` column exists and filter data by the logged-in user's `maNVYT`
     if 'maNVYT' in leave_df.columns:
-        user_leaves = leave_df[leave_df['maNVYT'] == str(user_info['maNVYT'])]
+        # Convert both to strings for consistent comparison
+        leave_df['maNVYT'] = leave_df['maNVYT'].astype(str)
+        user_maNVYT = str(user_info['maNVYT'])
+        user_leaves = leave_df[leave_df['maNVYT'] == user_maNVYT]
     else:
         st.error("Column 'maNVYT' is missing in the Google Sheet.")
         return
@@ -149,7 +152,7 @@ def display_user_leaves():
 
                 if st.button("Hủy phép"):
                     leave_df.at[cancel_row, 'HuyPhep'] = '1'
-                    leave_df.at[cancel_row, 'nguoiHuy'] = user_info['maNVYT']
+                    leave_df.at[cancel_row, 'nguoiHuy'] = user_maNVYT
 
                     # Update Google Sheet
                     body = {'values': leave_df.values.tolist()}
