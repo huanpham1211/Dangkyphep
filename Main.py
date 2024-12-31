@@ -88,9 +88,6 @@ def display_all_leaves():
     # Convert `ngayDangKy` to datetime for filtering and sorting
     leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
 
-    # Make the title smaller
-    st.write("#### Danh sách đăng ký phép")
-
     # Horizontal layout for date filters
     col1, col2 = st.columns(2)
     with col1:
