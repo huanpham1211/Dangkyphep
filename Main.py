@@ -182,15 +182,21 @@ def display_registration_form():
 
     if st.button("Xác nhận đăng ký"):
         timestamp = datetime.now(pytz.timezone("Asia/Ho_Chi_Minh")).strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Ensure maNVYT is a string and matches exactly what is fetched
         new_registration = [
             [
-                int(user_info['maNVYT']),
+                str(user_info['maNVYT']),  # Ensure maNVYT is stored as a string
                 user_info['tenNhanVien'],
                 str(registration_date),
                 leave_type,
-                timestamp
+                timestamp,
+                "",  # DuyetPhep column (default empty)
+                "",  # HuyPhep column (default empty)
+                ""   # nguoiHuy column (default empty)
             ]
         ]
+
         try:
             append_to_sheet(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE, new_registration)
             st.success("Đăng ký thành công!")
