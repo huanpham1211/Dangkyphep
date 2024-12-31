@@ -88,10 +88,18 @@ def display_all_leaves():
     # Convert `ngayDangKy` to datetime for filtering and sorting
     leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
 
+    # Smaller title and date filters for compact view
+    st.markdown("<h4>Danh sách đăng ký phép</h4>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size: small;'>Bộ lọc thời gian:</div>", unsafe_allow_html=True)
+
     # Horizontal layout for date filters
     col1, col2 = st.columns(2)
     with col1:
-        start_date = st.date_input("Ngày bắt đầu", value=pd.Timestamp.now().normalize(), key="start_date")
+        start_date = st.date_input(
+            "Ngày bắt đầu", 
+            value=pd.Timestamp.now().normalize(), 
+            key="start_date"
+        )
     with col2:
         end_date = st.date_input(
             "Ngày kết thúc",
@@ -114,7 +122,7 @@ def display_all_leaves():
         'DuyetPhep': 'Duyệt'
     })
 
-    # Highlight approved leaves
+    # Highlight approved and rejected leaves
     def highlight_approved(row):
         if row['Duyệt'] == 'Duyệt':
             return ['background-color: lightgreen' for _ in row]
@@ -123,12 +131,29 @@ def display_all_leaves():
         else:
             return ['' for _ in row]  # No background
 
-    st.write("### Danh sách đăng ký phép:")
+    # Display filtered table
     if not filtered_leaves.empty:
-        styled_df = filtered_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt']].style.apply(highlight_approved, axis=1)
-        st.dataframe(styled_df, use_container_width=True)
+        st.markdown(
+            "<div style='font-size: small;'>Dữ liệu bảng:</div>", unsafe_allow_html=True
+        )
+        styled_df = filtered_leaves[
+            ['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt']
+        ].style.apply(highlight_approved, axis=1)
+        
+        # Use a larger area for the table and make it responsive
+        st.markdown(
+            "<style>"
+            "div[data-testid='stDataFrame'] div {"
+            "    overflow-x: auto; overflow-y: auto;"
+            "    font-size: smaller;"  # Ensure readability on smaller screens
+            "}"
+            "</style>",
+            unsafe_allow_html=True
+        )
+        st.dataframe(styled_df, use_container_width=True, height=600)  # Larger table height
     else:
-        st.write("Không có đăng ký phép nào trong khoảng thời gian này.")
+        st.markdown("<div style='font-size: small;'>Không có đăng ký phép nào trong khoảng thời gian này.</div>", unsafe_allow_html=True)
+
 
 
 
