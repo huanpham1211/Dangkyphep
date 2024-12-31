@@ -163,12 +163,15 @@ def display_user_leaves():
         if canceled_count < 2:
             st.write(f"Bạn có thể hủy thêm {2 - canceled_count} lần.")
             
+            # Filter leaves where 'Hủy phép' is empty
+            cancellable_leaves = user_leaves[user_leaves['Hủy phép'].isnull() | (user_leaves['Hủy phép'] == "")]
+            
             # Allow user to select a leave to cancel
-            if not user_leaves.empty:
+            if not cancellable_leaves.empty:
                 cancel_row = st.selectbox(
                     "Chọn dòng để hủy:",
-                    user_leaves.index,
-                    format_func=lambda x: f"Ngày đăng ký: {user_leaves.loc[x, 'Ngày đăng ký']}"
+                    cancellable_leaves.index,
+                    format_func=lambda x: f"Ngày đăng ký: {cancellable_leaves.loc[x, 'Ngày đăng ký']}"
                 )
 
                 if st.button("Hủy phép"):
@@ -181,10 +184,13 @@ def display_user_leaves():
                         body={"values": [["Hủy", user_maNVYT]]}  # Update HuyPhep and nguoiHuy columns
                     ).execute()
                     st.success("Đã hủy phép thành công.")
+            else:
+                st.warning("Không có phép nào có thể hủy.")
         else:
             st.warning("Bạn đã đạt giới hạn hủy phép.")
     else:
         st.write("Không có phép nào được đăng ký bởi bạn.")
+
 
 
 
