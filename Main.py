@@ -324,6 +324,35 @@ def admin_approval_page():
     else:
         st.write("Không có đăng ký phép nào trong khoảng thời gian này.")
 
+def admin_disapproved_leaves():
+    # Fetch leave data
+    leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+
+    # Ensure required columns exist
+    required_columns = ['maNVYT', 'tenNhanVien', 'ngayDangKy', 'loaiPhep', 'thoiGianDangKy', 'DuyetPhep', 'HuyPhep']
+    for col in required_columns:
+        if col not in leave_df.columns:
+            leave_df[col] = ""  # Add missing columns with default values
+
+    # Filter rows with "Duyệt" in `DuyetPhep` column
+    approved_leaves = leave_df[leave_df['DuyetPhep'] == 'Duyệt']
+
+    if not approved_leaves.empty:
+        # Rename columns for display
+        approved_leaves = approved_leaves.rename(columns={
+            'tenNhanVien': 'Họ tên',
+            'ngayDangKy': 'Ngày đăng ký',
+            'loaiPhep': 'Loại phép',
+            'thoiGianDangKy': 'Thời gian đăng ký',
+            'DuyetPhep': 'Duyệt',
+            'HuyPhep': 'Hủy phép'
+        })
+
+        # Display approved leaves
+        st.write("### Danh sách phép đã duyệt:")
+        st.dataframe(approved_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt']], use_container_width=True)
+    else:
+        st.write("Không có phép nào đã được duyệt.")
 
 
 
@@ -384,7 +413,9 @@ else:
     elif page == "Duyệt phép" and role == "admin":
         st.subheader("Duyệt phép")  # Smaller than st.title
         admin_approval_page()
-
+    elif page == "Hủy diệt phép" and role == "admin":
+        st.subheader("Hủy duyệt phép")  # Smaller than st.title
+        admin_disapproved_leaves()
 
     # Footer
     st.sidebar.markdown("---")
