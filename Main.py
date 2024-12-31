@@ -158,7 +158,6 @@ def display_user_leaves():
         st.error("Column 'maNVYT' is missing in the Google Sheet.")
         return
 
-    st.write("### Danh sách phép của bạn:")
     if not user_leaves.empty:
         # Rename columns for display
         user_leaves = user_leaves.rename(columns={
@@ -207,14 +206,10 @@ def display_user_leaves():
         st.write("Không có phép nào được đăng ký bởi bạn.")
 
 
-
-
-
 # Registration form for leaves
 def display_registration_form():
     user_info = st.session_state['user_info']
 
-    st.write("### Chọn ngày đăng ký:")
     registration_date = st.date_input("Ngày đăng ký", key="registration_date")
 
     st.write("### Chọn loại phép:")
@@ -258,7 +253,6 @@ def admin_approval_page():
     leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
 
     # Side-by-side layout for date filters
-    st.write("### Bộ lọc thời gian:")
     col1, col2 = st.columns(2)
     with col1:
         start_date = st.date_input("Ngày bắt đầu", value=pd.Timestamp.now().normalize(), key="start_date")
