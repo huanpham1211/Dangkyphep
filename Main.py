@@ -395,7 +395,7 @@ else:
     # Define pages
     pages = ["Danh sách đăng ký phép", "Phép của tôi", "Đăng ký phép mới"]
     if role == "admin":
-        pages.append["Duyệt phép", "Hủy diệt phép"]
+        pages.append(["Duyệt phép", "Hủy diệt phép"])
 
     # Sidebar navigation
     page = st.sidebar.radio("Chọn trang", pages)
