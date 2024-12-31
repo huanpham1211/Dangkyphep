@@ -161,8 +161,11 @@ def display_user_leaves():
         return
 
     if not user_leaves.empty:
-        # Convert 'Ngày đăng ký' to datetime format
-        user_leaves['Ngày đăng ký'] = pd.to_datetime(user_leaves['ngayDangKy'], errors='coerce')
+        # Convert 'ngayDangKy' to datetime format
+        user_leaves['ngayDangKy'] = pd.to_datetime(user_leaves['ngayDangKy'], errors='coerce')
+
+        # Filter out rows where 'ngayDangKy' could not be converted
+        user_leaves = user_leaves[user_leaves['ngayDangKy'].notna()]
 
         # Rename columns for display
         user_leaves = user_leaves.rename(columns={
@@ -171,7 +174,8 @@ def display_user_leaves():
             'loaiPhep': 'Loại phép',
             'thoiGianDangKy': 'Thời gian đăng ký',
             'DuyetPhep': 'Duyệt',
-            'HuyPhep': 'Hủy phép'
+            'HuyPhep': 'Hủy phép',
+            'nguoiHuy': 'Người hủy'
         })
 
         # Get the current date to calculate which 6-month period we are in
@@ -190,7 +194,7 @@ def display_user_leaves():
         # Filter cancellations within the current 6-month period and by the current user
         user_cancellations = user_leaves[
             (user_leaves['Hủy phép'] == 'Hủy') &
-            (user_leaves['nguoiHuy'] == user_maNVYT) &
+            (user_leaves['Người hủy'] == user_maNVYT) &
             (user_leaves['Ngày đăng ký'] >= period_start) &
             (user_leaves['Ngày đăng ký'] <= period_end)
         ]
@@ -228,6 +232,7 @@ def display_user_leaves():
             st.warning("Bạn đã đạt giới hạn hủy phép trong giai đoạn này.")
     else:
         st.write("Không có phép nào được đăng ký bởi bạn.")
+
 
 
 
