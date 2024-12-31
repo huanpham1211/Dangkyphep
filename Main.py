@@ -161,6 +161,9 @@ def display_user_leaves():
         return
 
     if not user_leaves.empty:
+        # Convert 'Ngày đăng ký' to datetime format
+        user_leaves['Ngày đăng ký'] = pd.to_datetime(user_leaves['ngayDangKy'], errors='coerce')
+
         # Rename columns for display
         user_leaves = user_leaves.rename(columns={
             'tenNhanVien': 'Họ tên',
@@ -225,6 +228,7 @@ def display_user_leaves():
             st.warning("Bạn đã đạt giới hạn hủy phép trong giai đoạn này.")
     else:
         st.write("Không có phép nào được đăng ký bởi bạn.")
+
 
 
 
