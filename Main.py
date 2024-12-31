@@ -310,31 +310,27 @@ else:
     # Display greeting at the top of the main page
     user_info = st.session_state['user_info']
     role = user_info.get('chucVu', '').lower()  # Default to empty string if chucVu is missing
-    
-    st.write(f"### Xin chào, **{user_info['tenNhanVien']}**")
-    
+        
     # Sidebar content
     with st.sidebar:
         st.write(f"Xin chào, **{user_info['tenNhanVien']}**")
+        
+        # Sidebar navigation
+        pages = ["Danh sách đăng ký phép", "Phép của tôi", "Đăng ký phép mới"]
+        if role == "admin":
+            pages.append("Duyệt phép")
+        page = st.radio("Chọn trang", pages)
         
         # Logout button
         if st.button("Đăng xuất"):
             st.session_state.clear()
             st.experimental_rerun()
         
-        st.markdown("---")
+        # Footer at the bottom of the sidebar
         st.markdown(
-            "<div style='text-align: center; font-size: small;'>Developed by HuanPham</div>",
+            "<div style='position: fixed; bottom: 0; width: 100%; text-align: center; font-size: small;'>Developed by HuanPham</div>",
             unsafe_allow_html=True
         )
-
-    # Define pages
-    pages = ["Danh sách đăng ký phép", "Phép của tôi", "Đăng ký phép mới"]
-    if role == "admin":
-        pages.append("Duyệt phép")
-
-    # Sidebar navigation
-    page = st.sidebar.radio("Chọn trang", pages)
 
     # Page navigation logic
     if page == "Danh sách đăng ký phép":
@@ -349,5 +345,6 @@ else:
     elif page == "Duyệt phép" and role == "admin":
         st.title("Duyệt phép")
         admin_approval_page()
+
 
 
