@@ -248,7 +248,7 @@ def admin_approval_page():
                     spreadsheetId=LEAVE_SHEET_ID,
                     range=f"Sheet1!F{row_index}:F{row_index}",
                     valueInputOption="RAW",
-                    body={"values": [["1"]]}  # Set DuyetPhep to 1
+                    body={"values": [["Duyệt"]]} 
                 ).execute()
                 st.success(f"Duyệt thành công cho {row['tenNhanVien']}")
 
