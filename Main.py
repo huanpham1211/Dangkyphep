@@ -307,16 +307,26 @@ if not st.session_state.get('is_logged_in', False):
                 st.error("Sai tên tài khoản hoặc mật khẩu")
 
 else:
-    # Display greeting at the top
+    # Display greeting at the top of the main page
     user_info = st.session_state['user_info']
     role = user_info.get('chucVu', '').lower()  # Default to empty string if chucVu is missing
     
     st.write(f"### Xin chào, **{user_info['tenNhanVien']}**")
     
-    # Logout button
-    if st.button("Đăng xuất"):
-        st.session_state.clear()
-        st.experimental_rerun()
+    # Sidebar content
+    with st.sidebar:
+        st.write(f"Xin chào, **{user_info['tenNhanVien']}**")
+        
+        # Logout button
+        if st.button("Đăng xuất"):
+            st.session_state.clear()
+            st.experimental_rerun()
+        
+        st.markdown("---")
+        st.markdown(
+            "<div style='text-align: center; font-size: small;'>Developed by HuanPham</div>",
+            unsafe_allow_html=True
+        )
 
     # Define pages
     pages = ["Danh sách đăng ký phép", "Phép của tôi", "Đăng ký phép mới"]
@@ -339,12 +349,5 @@ else:
     elif page == "Duyệt phép" and role == "admin":
         st.title("Duyệt phép")
         admin_approval_page()
-
-    # Footer
-    st.markdown("---")
-    st.markdown(
-        "<div style='text-align: center; font-size: small;'>Developed by HuanPham</div>",
-        unsafe_allow_html=True
-    )
 
 
