@@ -85,6 +85,22 @@ def display_all_leaves():
         if col not in leave_df.columns:
             leave_df[col] = ""  # Add missing columns with default values
 
+    # Convert `ngayDangKy` to datetime for filtering and sorting
+    leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
+
+    # Horizontal layout for date filters
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input("Ngày bắt đầu", value=pd.Timestamp.now().normalize())
+    with col2:
+        end_date = st.date_input("Ngày kết thúc", value=pd.Timestamp.now().normalize())
+
+    # Filter rows by the date range
+    filtered_leaves = leave_df[
+        (leave_df['ngayDangKy'] >= pd.to_datetime(start_date)) &
+        (leave_df['ngayDangKy'] <= pd.to_datetime(end_date))
+    ].sort_values(by='ngayDangKy', ascending=True)  # Sort by `ngayDangKy` ASC
+
     # Rename columns for display
     leave_df = leave_df.rename(columns={
         'tenNhanVien': 'Họ tên',
@@ -99,11 +115,12 @@ def display_all_leaves():
         return ['background-color: lightgreen' if row['Duyệt'] == 'Duyệt' else '' for _ in row]
 
     st.write("### Danh sách đăng ký phép:")
-    if not leave_df.empty:
-        styled_df = leave_df[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt']].style.apply(highlight_approved, axis=1)
+    if not filtered_leaves.empty:
+        styled_df = filtered_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt']].style.apply(highlight_approved, axis=1)
         st.dataframe(styled_df, use_container_width=True)
     else:
-        st.write("Không có đăng ký phép nào.")
+        st.write("Không có đăng ký phép nào trong khoảng thời gian này.")
+
 
 
 # Display user's leaves with the ability to cancel
@@ -121,9 +138,6 @@ def display_user_leaves():
     else:
         st.error("Column 'maNVYT' is missing in the Google Sheet.")
         return
-# Highlight approved leaves
-    def highlight_approved(row):
-        return ['background-color: lightgreen' if row['Duyệt'] == 'Duyệt' else '' for _ in row]
 
     st.write("### Danh sách phép của bạn:")
     if not user_leaves.empty:
@@ -283,7 +297,7 @@ if not st.session_state.get('is_logged_in', False):
             if user is not None:
                 # Ensure maNVYT is handled as a string
                 st.session_state['user_info'] = {
-                    "maNVYT": str(user["maNVYT"]).zfill(len(user["maNVYT"])),  # Preserve leading zeros
+                    "maNVYT": str(user["maNVYT"]),  # Preserve as string
                     "tenNhanVien": user["tenNhanVien"],
                     "chucVu": user["chucVu"]
                 }
@@ -293,8 +307,16 @@ if not st.session_state.get('is_logged_in', False):
                 st.error("Sai tên tài khoản hoặc mật khẩu")
 
 else:
+    # Display greeting at the top
     user_info = st.session_state['user_info']
-    role = user_info['chucVu']
+    role = user_info.get('chucVu', '').lower()  # Default to empty string if chucVu is missing
+    
+    st.write(f"### Xin chào, **{user_info['tenNhanVien']}**")
+    
+    # Logout button
+    if st.button("Đăng xuất"):
+        st.session_state.clear()
+        st.experimental_rerun()
 
     # Define pages
     pages = ["Danh sách đăng ký phép", "Phép của tôi", "Đăng ký phép mới"]
@@ -302,8 +324,9 @@ else:
         pages.append("Duyệt phép")
 
     # Sidebar navigation
-    page = st.sidebar.radio("", pages)
+    page = st.sidebar.radio("Chọn trang", pages)
 
+    # Page navigation logic
     if page == "Danh sách đăng ký phép":
         st.title("Danh sách đăng ký phép")
         display_all_leaves()
@@ -316,4 +339,12 @@ else:
     elif page == "Duyệt phép" and role == "admin":
         st.title("Duyệt phép")
         admin_approval_page()
+
+    # Footer
+    st.markdown("---")
+    st.markdown(
+        "<div style='text-align: center; font-size: small;'>Developed by HuanPham</div>",
+        unsafe_allow_html=True
+    )
+
 
