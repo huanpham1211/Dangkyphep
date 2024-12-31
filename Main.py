@@ -207,31 +207,37 @@ def admin_approval_page():
     leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
 
     # Ensure required columns exist
-    required_columns = ['maNVYT', 'tenNhanVien', 'ngayDangKy', 'loaiPhep', 'thoiGianDangKy', 'DuyetPhep']
+    required_columns = ['maNVYT', 'tenNhanVien', 'ngayDangKy', 'loaiPhep', 'thoiGianDangKy', 'DuyetPhep', 'HuyPhep']
     for col in required_columns:
         if col not in leave_df.columns:
             leave_df[col] = ""  # Add missing columns with default values
 
-    # Rename columns for display
-    leave_df = leave_df.rename(columns={
-        'tenNhanVien': 'Họ tên',
-        'ngayDangKy': 'Ngày đăng ký',
-        'loaiPhep': 'Loại phép',
-        'thoiGianDangKy': 'Thời gian đăng ký',
-        'DuyetPhep': 'Duyệt'
-    })
+    # Convert `ngayDangKy` to datetime for filtering
+    leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
 
-    st.write("### Danh sách đăng ký phép (Admin):")
-    if not leave_df.empty:
+    # Add date filter
+    st.write("### Bộ lọc thời gian:")
+    start_date = st.date_input("Ngày bắt đầu", value=pd.Timestamp.now().normalize())
+    end_date = st.date_input("Ngày kết thúc", value=pd.Timestamp.now().normalize())
+
+    # Filter rows where `DuyetPhep` and `HuyPhep` are empty, and `ngayDangKy` falls within the selected range
+    filtered_leaves = leave_df[
+        (leave_df['DuyetPhep'] == "") & 
+        (leave_df['HuyPhep'] == "") & 
+        (leave_df['ngayDangKy'] >= pd.to_datetime(start_date)) & 
+        (leave_df['ngayDangKy'] <= pd.to_datetime(end_date))
+    ]
+
+    st.write("### Danh sách đăng ký phép (Chưa duyệt):")
+    if not filtered_leaves.empty:
         # Iterate over rows to display with a "Duyệt" button for each row
-        for index, row in leave_df.iterrows():
+        for index, row in filtered_leaves.iterrows():
             # Display the row information
             st.write(f"""
-                **Họ tên:** {row['Họ tên']}  
-                **Ngày đăng ký:** {row['Ngày đăng ký']}  
-                **Loại phép:** {row['Loại phép']}  
-                **Thời gian đăng ký:** {row['Thời gian đăng ký']}  
-                **Duyệt:** {row['Duyệt']}
+                **Họ tên:** {row['tenNhanVien']}  
+                **Ngày đăng ký:** {row['ngayDangKy'].strftime('%Y-%m-%d')}  
+                **Loại phép:** {row['loaiPhep']}  
+                **Thời gian đăng ký:** {row['thoiGianDangKy']}
             """)
             
             # "Duyệt" button
@@ -244,10 +250,11 @@ def admin_approval_page():
                     valueInputOption="RAW",
                     body={"values": [["1"]]}  # Set DuyetPhep to 1
                 ).execute()
-                st.success(f"Duyệt thành công cho {row['Họ tên']}")
+                st.success(f"Duyệt thành công cho {row['tenNhanVien']}")
                 st.experimental_rerun()  # Refresh the page to show updated data
     else:
-        st.write("Không có đăng ký phép nào.")
+        st.write("Không có đăng ký phép nào trong khoảng thời gian này.")
+
 
 
 # Main app logic
