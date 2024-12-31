@@ -327,15 +327,25 @@ def admin_approval_page():
 def admin_disapproved_leaves():
     # Fetch leave data
     leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+    nhanvien_df = fetch_sheet_data(NHANVIEN_SHEET_ID, NHANVIEN_SHEET_RANGE)
 
     # Ensure required columns exist
-    required_columns = ['maNVYT', 'tenNhanVien', 'ngayDangKy', 'loaiPhep', 'thoiGianDangKy', 'DuyetPhep', 'HuyPhep']
+    required_columns = ['maNVYT', 'tenNhanVien', 'ngayDangKy', 'loaiPhep', 'thoiGianDangKy', 'DuyetPhep', 'HuyPhep', 'nguoiHuy']
     for col in required_columns:
         if col not in leave_df.columns:
             leave_df[col] = ""  # Add missing columns with default values
 
     # Filter rows with "Duyệt" in `DuyetPhep` column
     approved_leaves = leave_df[leave_df['DuyetPhep'] == 'Duyệt']
+
+    # Add filter for `tenNhanVien`
+    st.write("### Lọc theo nhân viên:")
+    employee_options = nhanvien_df['tenNhanVien'].unique().tolist()  # Fetch all unique names
+    employee_filter = st.selectbox("Chọn nhân viên", options=["Tất cả"] + employee_options, key="employee_filter")
+
+    # Apply the employee filter
+    if employee_filter != "Tất cả":
+        approved_leaves = approved_leaves[approved_leaves['tenNhanVien'] == employee_filter]
 
     if not approved_leaves.empty:
         # Rename columns for display
@@ -348,11 +358,32 @@ def admin_disapproved_leaves():
             'HuyPhep': 'Hủy phép'
         })
 
-        # Display approved leaves
-        st.write("### Danh sách phép đã duyệt:")
-        st.dataframe(approved_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt']], use_container_width=True)
+        # Iterate over rows to display with a "Hủy" button for each row
+        for index, row in approved_leaves.iterrows():
+            st.write(f"""
+                **Họ tên:** {row['Họ tên']}  
+                **Ngày đăng ký:** {row['Ngày đăng ký']}  
+                **Loại phép:** {row['Loại phép']}  
+                **Thời gian đăng ký:** {row['Thời gian đăng ký']}
+            """)
+            
+            # "Hủy" button
+            if st.button(f"Hủy phép cho {row['Họ tên']}", key=f"cancel_{index}"):
+                # Update the specific row in the Google Sheet
+                row_index = index + 2  # Account for 1-based indexing in Google Sheets and header row
+                sheets_service.spreadsheets().values().update(
+                    spreadsheetId=LEAVE_SHEET_ID,
+                    range=f"Sheet1!G{row_index}:H{row_index}",
+                    valueInputOption="RAW",
+                    body={"values": [["Hủy", st.session_state['user_info']['maNVYT']]]}  # Update HuyPhep and nguoiHuy columns
+                ).execute()
+                st.success(f"Hủy phép thành công cho {row['Họ tên']}.")
+
+                # Refresh the page to reflect the updated data
+                st.experimental_rerun()
     else:
         st.write("Không có phép nào đã được duyệt.")
+
 
 
 
