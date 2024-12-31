@@ -138,11 +138,11 @@ def display_user_leaves():
         st.dataframe(user_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt', 'Hủy phép']], use_container_width=True)
 
         # Allow the user to cancel a maximum of 2 leaves
-        canceled_count = user_leaves[user_leaves['Hủy phép'] == '1'].shape[0]
+        canceled_count = user_leaves[user_leaves['Hủy phép'] == 'Hủy'].shape[0]
         if canceled_count < 2:
             st.write(f"Bạn có thể hủy thêm {2 - canceled_count} lần.")
             
-            # Ensure valid selection for cancellation
+            # Allow user to select a leave to cancel
             if not user_leaves.empty:
                 cancel_row = st.selectbox(
                     "Chọn dòng để hủy:",
@@ -151,22 +151,20 @@ def display_user_leaves():
                 )
 
                 if st.button("Hủy phép"):
-                    leave_df.at[cancel_row, 'HuyPhep'] = '1'
-                    leave_df.at[cancel_row, 'nguoiHuy'] = user_maNVYT
-
-                    # Update Google Sheet
-                    body = {'values': leave_df.values.tolist()}
+                    # Update the specific row in the Google Sheet
+                    row_index = cancel_row + 2  # Account for 1-based indexing in Google Sheets and header row
                     sheets_service.spreadsheets().values().update(
                         spreadsheetId=LEAVE_SHEET_ID,
-                        range=LEAVE_SHEET_RANGE,
+                        range=f"Sheet1!G{row_index}:H{row_index}",
                         valueInputOption="RAW",
-                        body=body
+                        body={"values": [["Hủy", user_maNVYT]]}  # Update HuyPhep and nguoiHuy columns
                     ).execute()
                     st.success("Đã hủy phép thành công.")
         else:
             st.warning("Bạn đã đạt giới hạn hủy phép.")
     else:
         st.write("Không có phép nào được đăng ký bởi bạn.")
+
 
 
 
@@ -217,10 +215,12 @@ if not st.session_state.get('is_logged_in', False):
     if st.button("Login"):
         with st.spinner("Logging in, please wait..."):
             time.sleep(1)
+            # Fetch the user
             user = check_login(username, password)
             if user is not None:
+                # Ensure maNVYT is handled as a string
                 st.session_state['user_info'] = {
-                    "maNVYT": user["maNVYT"],
+                    "maNVYT": str(user["maNVYT"]).zfill(len(user["maNVYT"])),  # Preserve leading zeros
                     "tenNhanVien": user["tenNhanVien"],
                     "chucVu": user["chucVu"]
                 }
@@ -228,6 +228,7 @@ if not st.session_state.get('is_logged_in', False):
                 st.sidebar.success("Đăng nhập thành công")
             else:
                 st.error("Sai tên tài khoản hoặc mật khẩu")
+
 else:
     user_info = st.session_state['user_info']
     role = user_info['chucVu']
