@@ -44,18 +44,16 @@ def fetch_sheet_data(sheet_id, range_name):
     if not values:
         st.error("No data found in the specified range.")
         return pd.DataFrame()
-    
+
     headers = values[0]
     data = values[1:]
 
-    # Ensure data matches the headers
-    if any(len(row) != len(headers) for row in data):
-        st.error("Mismatch between data rows and headers in the Google Sheet.")
-        st.write("Headers:", headers)
-        st.write("Sample Rows:", data[:5])
-        return pd.DataFrame()
+    # Ensure all rows have the same number of columns as headers
+    data = [row + [""] * (len(headers) - len(row)) for row in data]
 
+    # Create DataFrame
     return pd.DataFrame(data, columns=headers)
+
 
 
 # Function to append data to a Google Sheet
