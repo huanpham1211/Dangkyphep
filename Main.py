@@ -80,13 +80,16 @@ def display_all_leaves():
     leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
 
     # Ensure required columns exist
-    required_columns = ['maNVYT', 'tenNhanVien', 'ngayDangKy', 'loaiPhep', 'thoiGianDangKy', 'DuyetPhep']
+    required_columns = ['maNVYT', 'tenNhanVien', 'ngayDangKy', 'loaiPhep', 'thoiGianDangKy', 'DuyetPhep', 'HuyPhep']
     for col in required_columns:
         if col not in leave_df.columns:
             leave_df[col] = ""  # Add missing columns with default values
 
     # Convert `ngayDangKy` to datetime for filtering and sorting
     leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
+
+    # Filter out rows where `HuyPhep` is not empty
+    leave_df = leave_df[leave_df['HuyPhep'].isnull() | (leave_df['HuyPhep'] == "")]
 
     # Horizontal layout for date filters
     col1, col2 = st.columns(2)
@@ -137,7 +140,6 @@ def display_all_leaves():
         st.dataframe(styled_df, use_container_width=True, height=600)
     else:
         st.write("Không có đăng ký phép nào trong khoảng thời gian này.")
-
 
 
 
