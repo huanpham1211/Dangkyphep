@@ -92,31 +92,39 @@ def check_login(username, password):
 def display_all_leaves():
     leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
 
+    # Ensure required columns exist
+    required_columns = ['maNVYT', 'tenNhanVien', 'ngayDangKy', 'loaiPhep', 'thoiGianDangKy', 'DuyetPhep']
+    for col in required_columns:
+        if col not in leave_df.columns:
+            leave_df[col] = ""  # Add missing columns with default values
+
     # Rename columns for display
     leave_df = leave_df.rename(columns={
         'tenNhanVien': 'Họ tên',
         'ngayDangKy': 'Ngày đăng ký',
+        'loaiPhep': 'Loại phép',
         'thoiGianDangKy': 'Thời gian đăng ký',
         'DuyetPhep': 'Duyệt'
     })
 
-    # Apply row highlighting for approved leaves
+    # Highlight approved leaves
     def highlight_approved(row):
         return ['background-color: lightgreen' if row['Duyệt'] == '1' else '' for _ in row]
 
     st.write("### Danh sách đăng ký phép:")
     if not leave_df.empty:
-        styled_df = leave_df[['Họ tên', 'Ngày đăng ký', 'Thời gian đăng ký', 'Duyệt']].style.apply(highlight_approved, axis=1)
+        styled_df = leave_df[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt']].style.apply(highlight_approved, axis=1)
         st.dataframe(styled_df, use_container_width=True)
     else:
         st.write("Không có đăng ký phép nào.")
+
 
 # Display user's leaves with the ability to cancel
 def display_user_leaves():
     leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
     user_info = st.session_state['user_info']
 
-    # Filter only user's leaves
+    # Filter only the logged-in user's leaves
     user_leaves = leave_df[leave_df['maNVYT'] == str(user_info['maNVYT'])]
 
     st.write("### Danh sách phép của bạn:")
@@ -125,19 +133,21 @@ def display_user_leaves():
         user_leaves = user_leaves.rename(columns={
             'tenNhanVien': 'Họ tên',
             'ngayDangKy': 'Ngày đăng ký',
+            'loaiPhep': 'Loại phép',
             'thoiGianDangKy': 'Thời gian đăng ký',
             'DuyetPhep': 'Duyệt',
             'HuyPhep': 'Hủy phép'
         })
-        
-        # Display user's leaves
-        st.dataframe(user_leaves[['Họ tên', 'Ngày đăng ký', 'Thời gian đăng ký', 'Duyệt', 'Hủy phép']], use_container_width=True)
 
-        # Allow cancellation if the user hasn't already canceled 2 leaves
+        # Display user's leaves
+        st.dataframe(user_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt', 'Hủy phép']], use_container_width=True)
+
+        # Allow the user to cancel a maximum of 2 leaves
         canceled_count = user_leaves[user_leaves['Hủy phép'] == '1'].shape[0]
         if canceled_count < 2:
             st.write(f"Bạn có thể hủy thêm {2 - canceled_count} lần.")
             cancel_row = st.selectbox("Chọn dòng để hủy:", user_leaves.index, format_func=lambda x: f"Ngày đăng ký: {user_leaves.loc[x, 'Ngày đăng ký']}")
+
             if st.button("Hủy phép"):
                 leave_df.at[cancel_row, 'HuyPhep'] = '1'
                 leave_df.at[cancel_row, 'nguoiHuy'] = user_info['maNVYT']
@@ -152,6 +162,7 @@ def display_user_leaves():
                 st.success("Đã hủy phép thành công.")
         else:
             st.warning("Bạn đã đạt giới hạn hủy phép.")
+
 
 # Registration form for leaves
 def display_registration_form():
