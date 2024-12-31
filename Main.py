@@ -335,8 +335,11 @@ def admin_disapproved_leaves():
         if col not in leave_df.columns:
             leave_df[col] = ""  # Add missing columns with default values
 
-    # Filter rows with "Duyệt" in `DuyetPhep` column
-    approved_leaves = leave_df[leave_df['DuyetPhep'] == 'Duyệt']
+    # Filter rows where `DuyetPhep` is "Duyệt" and `HuyPhep` is empty
+    approved_leaves = leave_df[
+        (leave_df['DuyetPhep'] == 'Duyệt') & 
+        (leave_df['HuyPhep'].isnull() | (leave_df['HuyPhep'] == ""))
+    ]
 
     # Add filter for `tenNhanVien`
     st.write("### Lọc theo nhân viên:")
@@ -381,11 +384,15 @@ def admin_disapproved_leaves():
 
                 # Re-fetch data to reflect the updated table
                 leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
-                approved_leaves = leave_df[leave_df['DuyetPhep'] == 'Duyệt']
+                approved_leaves = leave_df[
+                    (leave_df['DuyetPhep'] == 'Duyệt') & 
+                    (leave_df['HuyPhep'].isnull() | (leave_df['HuyPhep'] == ""))
+                ]
                 if employee_filter != "Tất cả":
                     approved_leaves = approved_leaves[approved_leaves['tenNhanVien'] == employee_filter]
     else:
         st.write("Không có phép nào đã được duyệt.")
+
 
 
 
