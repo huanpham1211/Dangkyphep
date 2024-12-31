@@ -116,7 +116,12 @@ def display_all_leaves():
 
     # Highlight approved leaves
     def highlight_approved(row):
-        return ['background-color: lightgreen' if row['Duyệt'] == 'Duyệt' else '' for _ in row]
+        if row['Duyệt'] == 'Duyệt':
+            return ['background-color: lightgreen' for _ in row]
+        elif row['Duyệt'] == 'Không duyệt':
+            return ['background-color: lightcoral' for _ in row]  # Light red background
+        else:
+            return ['' for _ in row]  # No background
 
     st.write("### Danh sách đăng ký phép:")
     if not filtered_leaves.empty:
@@ -264,7 +269,7 @@ def admin_approval_page():
 
     st.write("### Danh sách đăng ký phép (Chưa duyệt):")
     if not filtered_leaves.empty:
-        # Iterate over rows to display with a "Duyệt" button for each row
+        # Iterate over rows to display with "Duyệt" and "Không duyệt" buttons
         for index, row in filtered_leaves.iterrows():
             # Display the row information
             st.write(f"""
@@ -274,17 +279,32 @@ def admin_approval_page():
                 **Thời gian đăng ký:** {row['thoiGianDangKy']}
             """)
 
-            # "Duyệt" button
-            if st.button("Duyệt", key=f"approve_{index}"):
-                # Update the specific row in the Google Sheet
-                row_index = index + 2  # Account for 1-based indexing in Google Sheets and header row
-                sheets_service.spreadsheets().values().update(
-                    spreadsheetId=LEAVE_SHEET_ID,
-                    range=f"Sheet1!F{row_index}:F{row_index}",
-                    valueInputOption="RAW",
-                    body={"values": [["Duyệt"]]} 
-                ).execute()
-                st.success(f"Duyệt thành công cho {row['tenNhanVien']}")
+            col1, col2 = st.columns(2)
+            with col1:
+                # "Duyệt" button
+                if st.button("Duyệt", key=f"approve_{index}"):
+                    # Update the specific row in the Google Sheet
+                    row_index = index + 2  # Account for 1-based indexing in Google Sheets and header row
+                    sheets_service.spreadsheets().values().update(
+                        spreadsheetId=LEAVE_SHEET_ID,
+                        range=f"Sheet1!F{row_index}:F{row_index}",
+                        valueInputOption="RAW",
+                        body={"values": [["Duyệt"]]} 
+                    ).execute()
+                    st.success(f"Duyệt thành công cho {row['tenNhanVien']}")
+
+            with col2:
+                # "Không duyệt" button
+                if st.button("Không duyệt", key=f"reject_{index}"):
+                    # Update the specific row in the Google Sheet
+                    row_index = index + 2  # Account for 1-based indexing in Google Sheets and header row
+                    sheets_service.spreadsheets().values().update(
+                        spreadsheetId=LEAVE_SHEET_ID,
+                        range=f"Sheet1!F{row_index}:F{row_index}",
+                        valueInputOption="RAW",
+                        body={"values": [["Không duyệt"]]} 
+                    ).execute()
+                    st.success(f"Không duyệt thành công cho {row['tenNhanVien']}")
 
                 # Re-fetch data to show updated table without refreshing the page
                 leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
