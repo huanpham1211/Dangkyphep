@@ -108,11 +108,16 @@ def display_all_leaves():
 
 # Display user's leaves with the ability to cancel
 def display_user_leaves():
+    # Fetch leave data
     leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
     user_info = st.session_state['user_info']
 
-    # Filter only the logged-in user's leaves
-    user_leaves = leave_df[leave_df['maNVYT'] == str(user_info['maNVYT'])]
+    # Ensure the `maNVYT` column exists and filter data by the logged-in user's `maNVYT`
+    if 'maNVYT' in leave_df.columns:
+        user_leaves = leave_df[leave_df['maNVYT'] == str(user_info['maNVYT'])]
+    else:
+        st.error("Column 'maNVYT' is missing in the Google Sheet.")
+        return
 
     st.write("### Danh sách phép của bạn:")
     if not user_leaves.empty:
@@ -133,22 +138,33 @@ def display_user_leaves():
         canceled_count = user_leaves[user_leaves['Hủy phép'] == '1'].shape[0]
         if canceled_count < 2:
             st.write(f"Bạn có thể hủy thêm {2 - canceled_count} lần.")
-            cancel_row = st.selectbox("Chọn dòng để hủy:", user_leaves.index, format_func=lambda x: f"Ngày đăng ký: {user_leaves.loc[x, 'Ngày đăng ký']}")
+            
+            # Ensure valid selection for cancellation
+            if not user_leaves.empty:
+                cancel_row = st.selectbox(
+                    "Chọn dòng để hủy:",
+                    user_leaves.index,
+                    format_func=lambda x: f"Ngày đăng ký: {user_leaves.loc[x, 'Ngày đăng ký']}"
+                )
 
-            if st.button("Hủy phép"):
-                leave_df.at[cancel_row, 'HuyPhep'] = '1'
-                leave_df.at[cancel_row, 'nguoiHuy'] = user_info['maNVYT']
-                # Update Google Sheet
-                body = {'values': leave_df.values.tolist()}
-                sheets_service.spreadsheets().values().update(
-                    spreadsheetId=LEAVE_SHEET_ID,
-                    range=LEAVE_SHEET_RANGE,
-                    valueInputOption="RAW",
-                    body=body
-                ).execute()
-                st.success("Đã hủy phép thành công.")
+                if st.button("Hủy phép"):
+                    leave_df.at[cancel_row, 'HuyPhep'] = '1'
+                    leave_df.at[cancel_row, 'nguoiHuy'] = user_info['maNVYT']
+
+                    # Update Google Sheet
+                    body = {'values': leave_df.values.tolist()}
+                    sheets_service.spreadsheets().values().update(
+                        spreadsheetId=LEAVE_SHEET_ID,
+                        range=LEAVE_SHEET_RANGE,
+                        valueInputOption="RAW",
+                        body=body
+                    ).execute()
+                    st.success("Đã hủy phép thành công.")
         else:
             st.warning("Bạn đã đạt giới hạn hủy phép.")
+    else:
+        st.write("Không có phép nào được đăng ký bởi bạn.")
+
 
 
 # Registration form for leaves
