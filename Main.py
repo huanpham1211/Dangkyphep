@@ -101,8 +101,8 @@ def display_all_leaves():
         (leave_df['ngayDangKy'] <= pd.to_datetime(end_date))
     ].sort_values(by='ngayDangKy', ascending=True)  # Sort by `ngayDangKy` ASC
 
-    # Rename columns for display
-    leave_df = leave_df.rename(columns={
+    # Rename columns for display (apply to filtered_leaves)
+    filtered_leaves = filtered_leaves.rename(columns={
         'tenNhanVien': 'Họ tên',
         'ngayDangKy': 'Ngày đăng ký',
         'loaiPhep': 'Loại phép',
