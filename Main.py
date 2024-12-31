@@ -121,6 +121,9 @@ def display_user_leaves():
     else:
         st.error("Column 'maNVYT' is missing in the Google Sheet.")
         return
+# Highlight approved leaves
+    def highlight_approved(row):
+        return ['background-color: lightgreen' if row['Duyệt'] == 'Duyệt' else '' for _ in row]
 
     st.write("### Danh sách phép của bạn:")
     if not user_leaves.empty:
