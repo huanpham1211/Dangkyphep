@@ -226,7 +226,7 @@ def admin_approval_page():
         (leave_df['HuyPhep'] == "") & 
         (leave_df['ngayDangKy'] >= pd.to_datetime(start_date)) & 
         (leave_df['ngayDangKy'] <= pd.to_datetime(end_date))
-    ]
+    ].sort_values(by='ngayDangKy', ascending=True)  # Sort by `ngayDangKy` ASC
 
     st.write("### Danh sách đăng ký phép (Chưa duyệt):")
     if not filtered_leaves.empty:
@@ -239,7 +239,7 @@ def admin_approval_page():
                 **Loại phép:** {row['loaiPhep']}  
                 **Thời gian đăng ký:** {row['thoiGianDangKy']}
             """)
-            
+
             # "Duyệt" button
             if st.button("Duyệt", key=f"approve_{index}"):
                 # Update the specific row in the Google Sheet
@@ -251,7 +251,16 @@ def admin_approval_page():
                     body={"values": [["1"]]}  # Set DuyetPhep to 1
                 ).execute()
                 st.success(f"Duyệt thành công cho {row['tenNhanVien']}")
-                st.experimental_rerun()  # Refresh the page to show updated data
+
+                # Re-fetch data to show updated table without refreshing the page
+                leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+                leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
+                filtered_leaves = leave_df[
+                    (leave_df['DuyetPhep'] == "") & 
+                    (leave_df['HuyPhep'] == "") & 
+                    (leave_df['ngayDangKy'] >= pd.to_datetime(start_date)) & 
+                    (leave_df['ngayDangKy'] <= pd.to_datetime(end_date))
+                ].sort_values(by='ngayDangKy', ascending=True)  # Re-apply filters
     else:
         st.write("Không có đăng ký phép nào trong khoảng thời gian này.")
 
