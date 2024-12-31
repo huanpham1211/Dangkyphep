@@ -179,7 +179,6 @@ def display_user_leaves():
         })
 
         # Date filter
-        st.write("### Lọc theo thời gian:")
         col1, col2 = st.columns(2)
         current_year = pd.Timestamp.now().year
         with col1:
