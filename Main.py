@@ -78,9 +78,6 @@ def check_login(username, password):
     return None
 
 # Display all leaves with highlighting for approved ones
-# Set locale to Vietnamese for date formatting and calendar
-locale.setlocale(locale.LC_TIME, 'vi_VN.UTF-8')
-
 def display_all_leaves():
     leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
 
@@ -90,7 +87,7 @@ def display_all_leaves():
         if col not in leave_df.columns:
             leave_df[col] = ""  # Add missing columns with default values
 
-    # Convert `ngayDangKy` and `thoiGianDangKy` to datetime for formatting and filtering
+    # Convert `ngayDangKy` and `thoiGianDangKy` to datetime for filtering and formatting
     leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
     leave_df['thoiGianDangKy'] = pd.to_datetime(leave_df['thoiGianDangKy'], errors='coerce')
 
@@ -101,21 +98,21 @@ def display_all_leaves():
     col1, col2 = st.columns(2)
     with col1:
         start_date = st.date_input(
-            "Ngày bắt đầu", 
+            "Ngày bắt đầu (dd/mm/yyyy)", 
             value=pd.Timestamp.now().normalize(), 
-            key="start_date",
+            key="start_date"
         )
     with col2:
         end_date = st.date_input(
-            "Ngày kết thúc",
+            "Ngày kết thúc (dd/mm/yyyy)",
             value=(pd.Timestamp(start_date) + pd.DateOffset(months=6)).normalize(),
-            key="end_date",
+            key="end_date"
         )
 
     # Filter rows by the date range
     filtered_leaves = leave_df[
-        (leave_df['ngayDangKy'] >= pd.to_datetime(start_date)) &
-        (leave_df['ngayDangKy'] <= pd.to_datetime(end_date))
+        (leave_df['ngayDangKy'] >= pd.Timestamp(start_date)) &
+        (leave_df['ngayDangKy'] <= pd.Timestamp(end_date))
     ].sort_values(by='ngayDangKy', ascending=True)  # Sort by `ngayDangKy` ASC
 
     # Format dates as `dd/mm/yyyy`
