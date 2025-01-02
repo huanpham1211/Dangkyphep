@@ -167,21 +167,19 @@ def display_user_leaves():
         return
 
     if not user_leaves.empty:
-        # Convert 'ngayDangKy' and 'thoiGianDangKy' to datetime format
+        # Convert 'ngayDangKy' to datetime format
         user_leaves['ngayDangKy'] = pd.to_datetime(user_leaves['ngayDangKy'], errors='coerce')
-        user_leaves['thoiGianDangKy'] = pd.to_datetime(user_leaves['thoiGianDangKy'], errors='coerce')
 
-        # Filter out rows where dates could not be converted
-        user_leaves = user_leaves[user_leaves['ngayDangKy'].notna() & user_leaves['thoiGianDangKy'].notna()]
+        # Filter out rows where 'ngayDangKy' could not be converted
+        user_leaves = user_leaves[user_leaves['ngayDangKy'].notna()]
 
-        # Format dates as `dd/MM/yyyy` and `dd/MM/yyyy HH:mm`
-        user_leaves['ngayDangKy'] = user_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
-        user_leaves['thoiGianDangKy'] = user_leaves['thoiGianDangKy'].dt.strftime('%d/%m/%Y %H:%M')
+        # Format 'ngayDangKy' as `dd/MM/yyyy`
+        user_leaves['ngayDangKy_display'] = user_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
 
         # Rename columns for display
         user_leaves = user_leaves.rename(columns={
             'tenNhanVien': 'Họ tên',
-            'ngayDangKy': 'Ngày đăng ký',
+            'ngayDangKy_display': 'Ngày đăng ký',
             'loaiPhep': 'Loại phép',
             'thoiGianDangKy': 'Thời gian đăng ký',
             'DuyetPhep': 'Duyệt',
@@ -208,8 +206,8 @@ def display_user_leaves():
 
         # Filter leaves within the selected date range
         filtered_leaves = user_leaves[
-            (pd.to_datetime(user_leaves['Ngày đăng ký'], format='%d/%m/%Y') >= pd.Timestamp(start_date)) &
-            (pd.to_datetime(user_leaves['Ngày đăng ký'], format='%d/%m/%Y') <= pd.Timestamp(end_date))
+            (user_leaves['ngayDangKy'] >= pd.Timestamp(start_date)) &
+            (user_leaves['ngayDangKy'] <= pd.Timestamp(end_date))
         ]
 
         # Display filtered leaves
@@ -232,27 +230,27 @@ def display_user_leaves():
         first_half_cancellations = filtered_leaves[
             (filtered_leaves['Hủy phép'] == 'Hủy') &
             (filtered_leaves['Người hủy'] == user_maNVYT) &
-            (pd.to_datetime(filtered_leaves['Ngày đăng ký'], format='%d/%m/%Y') >= first_half_start) &
-            (pd.to_datetime(filtered_leaves['Ngày đăng ký'], format='%d/%m/%Y') <= first_half_end)
+            (filtered_leaves['ngayDangKy'] >= first_half_start) &
+            (filtered_leaves['ngayDangKy'] <= first_half_end)
         ].shape[0]
 
         second_half_cancellations = filtered_leaves[
             (filtered_leaves['Hủy phép'] == 'Hủy') &
             (filtered_leaves['Người hủy'] == user_maNVYT) &
-            (pd.to_datetime(filtered_leaves['Ngày đăng ký'], format='%d/%m/%Y') >= second_half_start) &
-            (pd.to_datetime(filtered_leaves['Ngày đăng ký'], format='%d/%m/%Y') <= second_half_end)
+            (filtered_leaves['ngayDangKy'] >= second_half_start) &
+            (filtered_leaves['ngayDangKy'] <= second_half_end)
         ].shape[0]
 
         max_cancellations_per_period = 2  # Easy to change cancellation limit here
 
         # Display cancellation limits for both periods
-        if filtered_leaves['Ngày đăng ký'].between(first_half_start, first_half_end).any():
+        if filtered_leaves['ngayDangKy'].between(first_half_start, first_half_end).any():
             st.write(
                 f"Trong 6 tháng đầu năm, bạn đã hủy {first_half_cancellations} lần. "
                 f"Bạn có thể hủy thêm {max(0, max_cancellations_per_period - first_half_cancellations)} lần."
             )
 
-        if filtered_leaves['Ngày đăng ký'].between(second_half_start, second_half_end).any():
+        if filtered_leaves['ngayDangKy'].between(second_half_start, second_half_end).any():
             st.write(
                 f"Trong 6 tháng cuối năm, bạn đã hủy {second_half_cancellations} lần. "
                 f"Bạn có thể hủy thêm {max(0, max_cancellations_per_period - second_half_cancellations)} lần."
