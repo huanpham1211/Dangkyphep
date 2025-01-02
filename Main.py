@@ -429,6 +429,14 @@ def admin_disapproved_leaves():
         if col not in leave_df.columns:
             leave_df[col] = ""  # Add missing columns with default values
 
+    # Convert `ngayDangKy` and `thoiGianDangKy` to datetime for formatting
+    leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
+    leave_df['thoiGianDangKy'] = pd.to_datetime(leave_df['thoiGianDangKy'], errors='coerce')
+
+    # Format dates as `dd/MM/yyyy` and `dd/MM/yyyy HH:mm:ss`
+    leave_df['ngayDangKy_display'] = leave_df['ngayDangKy'].dt.strftime('%d/%m/%Y')
+    leave_df['thoiGianDangKy_display'] = leave_df['thoiGianDangKy'].dt.strftime('%d/%m/%Y %H:%M:%S')
+
     # Filter rows where `DuyetPhep` is "Duyệt" and `HuyPhep` is empty
     approved_leaves = leave_df[
         (leave_df['DuyetPhep'] == 'Duyệt') & 
@@ -448,9 +456,9 @@ def admin_disapproved_leaves():
         # Rename columns for display
         approved_leaves = approved_leaves.rename(columns={
             'tenNhanVien': 'Họ tên',
-            'ngayDangKy': 'Ngày đăng ký',
+            'ngayDangKy_display': 'Ngày đăng ký',
             'loaiPhep': 'Loại phép',
-            'thoiGianDangKy': 'Thời gian đăng ký',
+            'thoiGianDangKy_display': 'Thời gian đăng ký',
             'DuyetPhep': 'Duyệt',
             'HuyPhep': 'Hủy phép'
         })
@@ -463,7 +471,7 @@ def admin_disapproved_leaves():
                 **Loại phép:** {row['Loại phép']}  
                 **Thời gian đăng ký:** {row['Thời gian đăng ký']}
             """)
-            
+
             # "Hủy" button
             if st.button(f"Hủy phép cho {row['Họ tên']}", key=f"cancel_{index}"):
                 # Update the specific row in the Google Sheet
@@ -478,6 +486,12 @@ def admin_disapproved_leaves():
 
                 # Re-fetch data to reflect the updated table
                 leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+                leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
+                leave_df['thoiGianDangKy'] = pd.to_datetime(leave_df['thoiGianDangKy'], errors='coerce')
+                leave_df['ngayDangKy_display'] = leave_df['ngayDangKy'].dt.strftime('%d/%m/%Y')
+                leave_df['thoiGianDangKy_display'] = leave_df['thoiGianDangKy'].dt.strftime('%d/%m/%Y %H:%M:%S')
+
+                # Re-apply filters
                 approved_leaves = leave_df[
                     (leave_df['DuyetPhep'] == 'Duyệt') & 
                     (leave_df['HuyPhep'].isnull() | (leave_df['HuyPhep'] == ""))
@@ -486,6 +500,7 @@ def admin_disapproved_leaves():
                     approved_leaves = approved_leaves[approved_leaves['tenNhanVien'] == employee_filter]
     else:
         st.write("Không có phép nào đã được duyệt.")
+
 
 
 
