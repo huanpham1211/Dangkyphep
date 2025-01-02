@@ -299,7 +299,7 @@ def display_registration_form():
     registration_date = st.date_input("Ngày đăng ký", key="registration_date")
 
     st.write("### Chọn loại phép:")
-    leave_type = st.selectbox("Loại phép", options=["Phép", "Bù"], key="leave_type")
+    leave_type = st.selectbox("Loại phép", options=["Phép Ngày", "Phép Sáng", "Phép Chiều", "Bù Ngày", "Bù Sáng", "Bù Chiều"], key="leave_type")
 
     if st.button("Xác nhận đăng ký"):
         timestamp = datetime.now(pytz.timezone("Asia/Ho_Chi_Minh")).strftime("%Y-%m-%d %H:%M:%S")
