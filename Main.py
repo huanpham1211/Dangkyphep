@@ -167,11 +167,16 @@ def display_user_leaves():
         return
 
     if not user_leaves.empty:
-        # Convert 'ngayDangKy' to datetime format
+        # Convert 'ngayDangKy' and 'thoiGianDangKy' to datetime format
         user_leaves['ngayDangKy'] = pd.to_datetime(user_leaves['ngayDangKy'], errors='coerce')
+        user_leaves['thoiGianDangKy'] = pd.to_datetime(user_leaves['thoiGianDangKy'], errors='coerce')
 
-        # Filter out rows where 'ngayDangKy' could not be converted
-        user_leaves = user_leaves[user_leaves['ngayDangKy'].notna()]
+        # Filter out rows where dates could not be converted
+        user_leaves = user_leaves[user_leaves['ngayDangKy'].notna() & user_leaves['thoiGianDangKy'].notna()]
+
+        # Format dates as `dd/MM/yyyy` and `dd/MM/yyyy HH:mm`
+        user_leaves['ngayDangKy'] = user_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
+        user_leaves['thoiGianDangKy'] = user_leaves['thoiGianDangKy'].dt.strftime('%d/%m/%Y %H:%M')
 
         # Rename columns for display
         user_leaves = user_leaves.rename(columns={
@@ -203,8 +208,8 @@ def display_user_leaves():
 
         # Filter leaves within the selected date range
         filtered_leaves = user_leaves[
-            (user_leaves['Ngày đăng ký'] >= pd.Timestamp(start_date)) &
-            (user_leaves['Ngày đăng ký'] <= pd.Timestamp(end_date))
+            (pd.to_datetime(user_leaves['Ngày đăng ký'], format='%d/%m/%Y') >= pd.Timestamp(start_date)) &
+            (pd.to_datetime(user_leaves['Ngày đăng ký'], format='%d/%m/%Y') <= pd.Timestamp(end_date))
         ]
 
         # Display filtered leaves
@@ -212,8 +217,7 @@ def display_user_leaves():
         if not filtered_leaves.empty:
             st.dataframe(
                 filtered_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt', 'Hủy phép']],
-                use_container_width=True,
-                height=600
+                use_container_width=True
             )
         else:
             st.write("Không có phép nào được đăng ký trong khoảng thời gian này.")
@@ -228,15 +232,15 @@ def display_user_leaves():
         first_half_cancellations = filtered_leaves[
             (filtered_leaves['Hủy phép'] == 'Hủy') &
             (filtered_leaves['Người hủy'] == user_maNVYT) &
-            (filtered_leaves['Ngày đăng ký'] >= first_half_start) &
-            (filtered_leaves['Ngày đăng ký'] <= first_half_end)
+            (pd.to_datetime(filtered_leaves['Ngày đăng ký'], format='%d/%m/%Y') >= first_half_start) &
+            (pd.to_datetime(filtered_leaves['Ngày đăng ký'], format='%d/%m/%Y') <= first_half_end)
         ].shape[0]
 
         second_half_cancellations = filtered_leaves[
             (filtered_leaves['Hủy phép'] == 'Hủy') &
             (filtered_leaves['Người hủy'] == user_maNVYT) &
-            (filtered_leaves['Ngày đăng ký'] >= second_half_start) &
-            (filtered_leaves['Ngày đăng ký'] <= second_half_end)
+            (pd.to_datetime(filtered_leaves['Ngày đăng ký'], format='%d/%m/%Y') >= second_half_start) &
+            (pd.to_datetime(filtered_leaves['Ngày đăng ký'], format='%d/%m/%Y') <= second_half_end)
         ].shape[0]
 
         max_cancellations_per_period = 2  # Easy to change cancellation limit here
