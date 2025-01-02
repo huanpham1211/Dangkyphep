@@ -98,13 +98,13 @@ def display_all_leaves():
     col1, col2 = st.columns(2)
     with col1:
         start_date = st.date_input(
-            "Ngày bắt đầu (dd/mm/yyyy)", 
+            "Ngày bắt đầu", 
             value=pd.Timestamp.now().normalize(), 
             key="start_date"
         )
     with col2:
         end_date = st.date_input(
-            "Ngày kết thúc (dd/mm/yyyy)",
+            "Ngày kết thúc",
             value=(pd.Timestamp(start_date) + pd.DateOffset(months=6)).normalize(),
             key="end_date"
         )
