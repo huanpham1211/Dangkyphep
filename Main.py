@@ -166,21 +166,13 @@ def display_user_leaves():
         st.error("Column 'maNVYT' is missing in the Google Sheet.")
         return
 
-    
     if not user_leaves.empty:
-        # Convert 'ngayDangKy' and 'thoiGianDangKy' to datetime
+        # Convert 'ngayDangKy' to datetime format
         user_leaves['ngayDangKy'] = pd.to_datetime(user_leaves['ngayDangKy'], errors='coerce')
-        user_leaves['thoiGianDangKy'] = pd.to_datetime(user_leaves['thoiGianDangKy'], errors='coerce')
 
-        # Filter out rows with invalid datetime values
-        user_leaves = user_leaves[
-            user_leaves['ngayDangKy'].notna() & user_leaves['thoiGianDangKy'].notna()
-        ]
+        # Filter out rows where 'ngayDangKy' could not be converted
+        user_leaves = user_leaves[user_leaves['ngayDangKy'].notna()]
 
-        # Format dates as `dd/mm/yyyy`
-        user_leaves['ngayDangKy'] = user_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
-        user_leaves['thoiGianDangKy'] = user_leaves['thoiGianDangKy'].dt.strftime('%d/%m/%Y %H:%M:%S')
-    
         # Rename columns for display
         user_leaves = user_leaves.rename(columns={
             'tenNhanVien': 'Họ tên',
@@ -192,10 +184,8 @@ def display_user_leaves():
             'nguoiHuy': 'Người hủy'
         })
 
-        # Display the formatted DataFrame
-        st.dataframe(user_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt', 'Hủy phép']], use_container_width=True)
-
         # Date filter
+        st.write("### Lọc theo thời gian:")
         col1, col2 = st.columns(2)
         current_year = pd.Timestamp.now().year
         with col1:
@@ -210,16 +200,13 @@ def display_user_leaves():
                 value=pd.Timestamp(year=current_year, month=12, day=31),
                 key="end_date"
             )
-        
-        # Convert 'Ngày đăng ký' back to datetime for filtering
-        user_leaves['Ngày đăng ký'] = pd.to_datetime(user_leaves['Ngày đăng ký'], format='%d/%m/%Y', errors='coerce')
-        
+
         # Filter leaves within the selected date range
         filtered_leaves = user_leaves[
             (user_leaves['Ngày đăng ký'] >= pd.Timestamp(start_date)) &
             (user_leaves['Ngày đăng ký'] <= pd.Timestamp(end_date))
         ]
-        
+
         # Display filtered leaves
         st.write("### Danh sách phép của bạn:")
         if not filtered_leaves.empty:
