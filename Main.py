@@ -335,8 +335,11 @@ def admin_approval_page():
         if col not in leave_df.columns:
             leave_df[col] = ""  # Add missing columns with default values
 
-    # Convert `ngayDangKy` to datetime for filtering
+    # Convert `ngayDangKy` to datetime for filtering and formatting
     leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
+
+    # Format `ngayDangKy` as `dd/MM/yyyy` for display
+    leave_df['ngayDangKy_display'] = leave_df['ngayDangKy'].dt.strftime('%d/%m/%Y')
 
     # Side-by-side layout for date filters
     col1, col2 = st.columns(2)
@@ -364,7 +367,7 @@ def admin_approval_page():
             # Display the row information
             st.write(f"""
                 **Họ tên:** {row['tenNhanVien']}  
-                **Ngày đăng ký:** {row['ngayDangKy'].strftime('%Y-%m-%d')}  
+                **Ngày đăng ký:** {row['ngayDangKy_display']}  
                 **Loại phép:** {row['loaiPhep']}  
                 **Thời gian đăng ký:** {row['thoiGianDangKy']}
             """)
@@ -399,6 +402,7 @@ def admin_approval_page():
                 # Re-fetch data to show updated table without refreshing the page
                 leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
                 leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
+                leave_df['ngayDangKy_display'] = leave_df['ngayDangKy'].dt.strftime('%d/%m/%Y')
                 filtered_leaves = leave_df[
                     (leave_df['DuyetPhep'] == "") & 
                     (leave_df['HuyPhep'] == "") & 
@@ -407,6 +411,7 @@ def admin_approval_page():
                 ].sort_values(by='ngayDangKy', ascending=True)  # Re-apply filters
     else:
         st.write("Không có đăng ký phép nào trong khoảng thời gian này.")
+
 
 def admin_disapproved_leaves():
     # Fetch leave data
