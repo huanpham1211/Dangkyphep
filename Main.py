@@ -6,6 +6,8 @@ import pytz
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import time
+import locale
+
 
 # Google Sheets document IDs and ranges
 
@@ -76,6 +78,9 @@ def check_login(username, password):
     return None
 
 # Display all leaves with highlighting for approved ones
+# Set locale to Vietnamese for date formatting and calendar
+locale.setlocale(locale.LC_TIME, 'vi_VN.UTF-8')
+
 def display_all_leaves():
     leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
 
@@ -85,8 +90,9 @@ def display_all_leaves():
         if col not in leave_df.columns:
             leave_df[col] = ""  # Add missing columns with default values
 
-    # Convert `ngayDangKy` to datetime for filtering and sorting
+    # Convert `ngayDangKy` and `thoiGianDangKy` to datetime for formatting and filtering
     leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
+    leave_df['thoiGianDangKy'] = pd.to_datetime(leave_df['thoiGianDangKy'], errors='coerce')
 
     # Filter out rows where `HuyPhep` is not empty
     leave_df = leave_df[leave_df['HuyPhep'].isnull() | (leave_df['HuyPhep'] == "")]
@@ -97,13 +103,13 @@ def display_all_leaves():
         start_date = st.date_input(
             "Ngày bắt đầu", 
             value=pd.Timestamp.now().normalize(), 
-            key="start_date"
+            key="start_date",
         )
     with col2:
         end_date = st.date_input(
             "Ngày kết thúc",
             value=(pd.Timestamp(start_date) + pd.DateOffset(months=6)).normalize(),
-            key="end_date"
+            key="end_date",
         )
 
     # Filter rows by the date range
@@ -111,6 +117,10 @@ def display_all_leaves():
         (leave_df['ngayDangKy'] >= pd.to_datetime(start_date)) &
         (leave_df['ngayDangKy'] <= pd.to_datetime(end_date))
     ].sort_values(by='ngayDangKy', ascending=True)  # Sort by `ngayDangKy` ASC
+
+    # Format dates as `dd/mm/yyyy`
+    filtered_leaves['ngayDangKy'] = filtered_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
+    filtered_leaves['thoiGianDangKy'] = filtered_leaves['thoiGianDangKy'].dt.strftime('%d/%m/%Y %H:%M:%S')
 
     # Rename columns for display (apply to filtered_leaves)
     filtered_leaves = filtered_leaves.rename(columns={
@@ -140,7 +150,6 @@ def display_all_leaves():
         st.dataframe(styled_df, use_container_width=True, height=600)
     else:
         st.write("Không có đăng ký phép nào trong khoảng thời gian này.")
-
 
 
 
