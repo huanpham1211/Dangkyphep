@@ -173,6 +173,10 @@ def display_user_leaves():
         # Filter out rows where 'ngayDangKy' could not be converted
         user_leaves = user_leaves[user_leaves['ngayDangKy'].notna()]
 
+        # Format dates as `dd/mm/yyyy`
+        user_leaves['ngayDangKy'] = user_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
+        user_leaves['thoiGianDangKy'] = user_leaves['thoiGianDangKy'].dt.strftime('%d/%m/%Y %H:%M:%S')
+        
         # Rename columns for display
         user_leaves = user_leaves.rename(columns={
             'tenNhanVien': 'Họ tên',
