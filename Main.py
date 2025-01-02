@@ -335,11 +335,13 @@ def admin_approval_page():
         if col not in leave_df.columns:
             leave_df[col] = ""  # Add missing columns with default values
 
-    # Convert `ngayDangKy` to datetime for filtering and formatting
+     # Convert `ngayDangKy` and `thoiGianDangKy` to datetime for filtering and formatting
     leave_df['ngayDangKy'] = pd.to_datetime(leave_df['ngayDangKy'], errors='coerce')
+    leave_df['thoiGianDangKy'] = pd.to_datetime(leave_df['thoiGianDangKy'], errors='coerce')
 
-    # Format `ngayDangKy` as `dd/MM/yyyy` for display
+    # Format `ngayDangKy` as `dd/MM/yyyy` and `thoiGianDangKy` as `dd/MM/yyyy HH:mm:ss`
     leave_df['ngayDangKy_display'] = leave_df['ngayDangKy'].dt.strftime('%d/%m/%Y')
+    leave_df['thoiGianDangKy_display'] = leave_df['thoiGianDangKy'].dt.strftime('%d/%m/%Y %H:%M:%S')
 
     # Side-by-side layout for date filters
     col1, col2 = st.columns(2)
