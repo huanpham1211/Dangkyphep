@@ -210,13 +210,16 @@ def display_user_leaves():
                 value=pd.Timestamp(year=current_year, month=12, day=31),
                 key="end_date"
             )
-
+        
+        # Convert 'Ngày đăng ký' back to datetime for filtering
+        user_leaves['Ngày đăng ký'] = pd.to_datetime(user_leaves['Ngày đăng ký'], format='%d/%m/%Y', errors='coerce')
+        
         # Filter leaves within the selected date range
         filtered_leaves = user_leaves[
             (user_leaves['Ngày đăng ký'] >= pd.Timestamp(start_date)) &
             (user_leaves['Ngày đăng ký'] <= pd.Timestamp(end_date))
         ]
-
+        
         # Display filtered leaves
         st.write("### Danh sách phép của bạn:")
         if not filtered_leaves.empty:
