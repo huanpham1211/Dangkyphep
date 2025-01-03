@@ -215,7 +215,7 @@ def display_user_leaves():
         if not filtered_leaves.empty:
             st.dataframe(
                 filtered_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt', 'Hủy phép']],
-                use_container_width=True
+                use_container_width=True, hide_index = True
             )
         else:
             st.write("Không có phép nào được đăng ký trong khoảng thời gian này.")
