@@ -549,7 +549,7 @@ def admin_disapproved_leaves():
 
 # Main app logic
 if not st.session_state.get('is_logged_in', False):
-    st.title("Đăng nhập")
+    st.title("Đăng ký phép bù - Khoa Xét nghiệm")
     username = st.text_input("Tài khoản")
     password = st.text_input("Mật khẩu", type="password")
     
