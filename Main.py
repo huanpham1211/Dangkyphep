@@ -609,7 +609,7 @@ def change_password():
 # Main app logic
 if not st.session_state.get('is_logged_in', False):
     st.title("Đăng ký phép/bù - Khoa Xét nghiệm")
-    username = st.text_input("Tài khoản", placeholder="e.g., xxxxx.bvhv")
+    username = st.text_input("Tài khoản", placeholder="e.g., 01234.bvhv")
     password = st.text_input("Mật khẩu", type="password")
     
     if st.button("Login"):
