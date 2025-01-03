@@ -307,19 +307,30 @@ def display_registration_form():
 
     # Restrict date input to the defined range
     registration_date = st.date_input(
-        "Ngày đăng ký", 
-        value=min_date, 
-        min_value=min_date, 
-        max_value=max_date, 
+        "Ngày đăng ký",
+        value=min_date,
+        min_value=min_date,
+        max_value=max_date,
         key="registration_date"
     )
 
     st.write("### Chọn loại phép:")
-    leave_type = st.selectbox("Loại phép", options=["Phép Ngày", "Phép Sáng", "Phép Chiều", "Bù Ngày", "Bù Sáng", "Bù Chiều"], key="leave_type")
+    leave_type = st.selectbox(
+        "Loại phép",
+        options=["Phép Ngày", "Phép Sáng", "Phép Chiều", "Bù Ngày", "Bù Sáng", "Bù Chiều"],
+        key="leave_type"
+    )
 
     if st.button("Xác nhận đăng ký"):
+        # Re-validate the selected date
+        if not (min_date <= registration_date <= max_date):
+            st.error(
+                f"Ngày đăng ký không hợp lệ. Vui lòng chọn trong khoảng từ {min_date.strftime('%d/%m/%Y')} đến {max_date.strftime('%d/%m/%Y')}."
+            )
+            return
+
         timestamp = datetime.now(pytz.timezone("Asia/Ho_Chi_Minh")).strftime("%Y-%m-%d %H:%M:%S")
-        
+
         # Fetch existing registrations to check for duplicates
         leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
         user_registrations = leave_df[
@@ -350,7 +361,8 @@ def display_registration_form():
             append_to_sheet(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE, new_registration)
             st.success("Đăng ký thành công!")
         except Exception as e:
-            st.error(f"Lỗi khi ghi dữ liệu vào Google Sheets: {e}")
+            st.error(f"Lỗi khi ghi dữ liệu: {e}")
+
 
 
 # Admin approval page
