@@ -7,7 +7,30 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import time
 import locale
+import streamlit.components.v1 as components
 
+
+# Full-Screen JavaScript Functionality
+full_screen_js = """
+<script>
+function enableFullScreen() {
+    var elem = document.documentElement; // Get the document's full element
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.mozRequestFullScreen) { // Firefox
+        elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) { // Chrome, Safari, and Opera
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { // IE/Edge
+        elem.msRequestFullscreen();
+    }
+}
+</script>
+<button onclick="enableFullScreen()" style="position:fixed;top:10px;right:10px;z-index:1000;">Full Screen</button>
+"""
+
+# Insert the full-screen button into the app
+components.html(full_screen_js, height=50)
 
 # Google Sheets document IDs and ranges
 
