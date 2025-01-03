@@ -152,8 +152,17 @@ def display_all_leaves():
 
 # Display user's leaves with the ability to cancel
 def display_user_leaves():
-    # Fetch leave data
-    leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+    # Add a refresh button at the top
+    if st.button("Làm mới"):
+        # Reload the data from the Google Sheet
+        leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+        # Save the refreshed data to session state
+        st.session_state["leave_df"] = leave_df
+        st.success("Dữ liệu đã được làm mới!")
+
+    # Use refreshed data if available
+    leave_df = st.session_state.get("leave_df", fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE))
+    
     user_info = st.session_state['user_info']
 
     # Ensure the `maNVYT` column exists and filter data by the logged-in user's `maNVYT`
@@ -241,10 +250,12 @@ def display_user_leaves():
 
                 # Refresh the data
                 leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+                st.session_state["leave_df"] = leave_df
+                st.success("Đã hủy phép thành công. Dữ liệu đã được làm mới!")
+
+                # Reload user-specific leaves
                 user_leaves = leave_df[leave_df['maNVYT'] == user_maNVYT]
 
-                # Refresh displayed table
-                st.success("Đã hủy phép thành công. Cập nhật danh sách bên dưới:")
                 if not user_leaves.empty:
                     user_leaves['ngayDangKy'] = pd.to_datetime(user_leaves['ngayDangKy'], errors='coerce')
                     user_leaves['ngayDangKy_display'] = user_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
@@ -266,6 +277,7 @@ def display_user_leaves():
             st.warning("Không có phép nào có thể hủy.")
     else:
         st.write("Không có phép nào được đăng ký bởi bạn.")
+
 
 
 
