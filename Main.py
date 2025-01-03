@@ -144,7 +144,7 @@ def display_all_leaves():
         ].style.apply(highlight_approved, axis=1)
 
         # Make the table larger
-        st.dataframe(styled_df, use_container_width=True, height=600)
+        st.dataframe(styled_df, use_container_width=True, hide_index = True, height=600)
     else:
         st.write("Không có đăng ký phép nào trong khoảng thời gian này.")
 
