@@ -315,7 +315,7 @@ def display_registration_form():
 
     # Define allowed date ranges
     if current_date < datetime(current_date.year, 7, 1).date():
-        min_date = datetime(current_date.year, 1, 1).date()
+        min_date = datetime(current_date.year, 2, 1).date()
         max_date = datetime(current_date.year, 7, 31).date()
     else:
         min_date = datetime(current_date.year, 7, 1).date()
