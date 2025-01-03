@@ -544,16 +544,16 @@ def admin_disapproved_leaves():
 
 
 # Function to change password
-def change_account():
+def change_password():
     user_info = st.session_state['user_info']
-    st.subheader("Thay đổi tài khoản")
+    st.subheader("Thay đổi mật khẩu")
     
-    # Input fields for current account, new account, and confirmation
-    current_account = st.text_input("Tài khoản hiện tại")
-    new_account = st.text_input("Tài khoản mới")
-    confirm_account = st.text_input("Xác nhận tài khoản mới")
+    # Input fields for old password, new password, and confirmation
+    old_password = st.text_input("Mật khẩu cũ", type="password")
+    new_password = st.text_input("Mật khẩu mới", type="password")
+    confirm_password = st.text_input("Xác nhận mật khẩu mới", type="password")
     
-    if st.button("Cập nhật tài khoản"):
+    if st.button("Cập nhật mật khẩu"):
         # Fetch user info from the session state
         nhanvien_df = st.session_state['nhanvien_df']
         
@@ -561,33 +561,34 @@ def change_account():
         user_row = nhanvien_df[nhanvien_df['maNVYT'] == user_info['maNVYT']]
         
         if not user_row.empty:
-            # Validate current account
-            if user_row.iloc[0]['taiKhoan'] == current_account:
-                if new_account == confirm_account:
+            # Validate old password
+            if user_row.iloc[0]['matKhau'] == old_password:
+                if new_password == confirm_password:
                     try:
                         # Find the row index in Google Sheets
-                        row_index = nhanvien_df[nhanvien_df['maNVYT'] == user_info['maNVYT']].index[0] + 2  # Add 2 for 1-based indexing and header row
+                        row_index = user_row.index[0] + 2  # Add 2 for 1-based indexing and header row
                         
-                        # Update the taiKhoan in the Google Sheet
+                        # Update the matKhau column in the Google Sheet
                         sheets_service.spreadsheets().values().update(
                             spreadsheetId=NHANVIEN_SHEET_ID,
-                            range=f"Sheet1!C{row_index}",  # 'taiKhoan' is in column C
+                            range=f"Sheet1!D{row_index}",  # 'matKhau' is in column D
                             valueInputOption="RAW",
-                            body={"values": [[new_account]]}
+                            body={"values": [[new_password]]}
                         ).execute()
                         
-                        st.success("Tài khoản đã được thay đổi thành công!")
+                        st.success("Mật khẩu đã được thay đổi thành công!")
                         
                         # Refresh the session state to reflect the change
                         st.session_state['nhanvien_df'] = fetch_sheet_data(NHANVIEN_SHEET_ID, NHANVIEN_SHEET_RANGE)
                     except Exception as e:
-                        st.error(f"Lỗi khi thay đổi tài khoản: {e}")
+                        st.error(f"Lỗi khi thay đổi mật khẩu: {e}")
                 else:
-                    st.error("Tài khoản mới và xác nhận tài khoản không khớp.")
+                    st.error("Mật khẩu mới và xác nhận mật khẩu không khớp.")
             else:
-                st.error("Tài khoản hiện tại không đúng.")
+                st.error("Mật khẩu cũ không đúng.")
         else:
             st.error("Không tìm thấy thông tin tài khoản.")
+
 
 
 
