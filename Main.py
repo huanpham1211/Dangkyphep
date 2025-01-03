@@ -152,20 +152,18 @@ def display_all_leaves():
 
 # Display user's leaves with the ability to cancel
 def display_user_leaves():
-    # Add a refresh button at the top
-    if st.button("Làm mới"):
-        # Reload the data from the Google Sheet
+    # Refresh button
+    if st.button("Làm mới dữ liệu"):
+        # Fetch fresh data and store it in session state
         leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
-        # Save the refreshed data to session state
-        st.session_state["leave_df"] = leave_df
+        st.session_state['leave_df'] = leave_df
         st.success("Dữ liệu đã được làm mới!")
 
-    # Use refreshed data if available
-    leave_df = st.session_state.get("leave_df", fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE))
-    
+    # Fetch leave data from session state or re-fetch if not available
+    leave_df = st.session_state.get('leave_df', fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE))
     user_info = st.session_state['user_info']
 
-    # Ensure the `maNVYT` column exists and filter data by the logged-in user's `maNVYT`
+    # Ensure the maNVYT column exists and filter data by the logged-in user's maNVYT
     if 'maNVYT' in leave_df.columns:
         # Convert both to strings for consistent comparison
         leave_df['maNVYT'] = leave_df['maNVYT'].astype(str)
@@ -182,7 +180,7 @@ def display_user_leaves():
         # Filter out rows where 'ngayDangKy' could not be converted
         user_leaves = user_leaves[user_leaves['ngayDangKy'].notna()]
 
-        # Format 'ngayDangKy' as `dd/MM/yyyy`
+        # Format 'ngayDangKy' as dd/MM/yyyy
         user_leaves['ngayDangKy_display'] = user_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
 
         # Rename columns for display
@@ -229,52 +227,69 @@ def display_user_leaves():
         else:
             st.write("Không có phép nào được đăng ký trong khoảng thời gian này.")
 
-        # Allow user to cancel if within limit
-        cancellable_leaves = filtered_leaves[filtered_leaves['Hủy phép'].isnull() | (filtered_leaves['Hủy phép'] == "")]
-        if not cancellable_leaves.empty:
-            cancel_row = st.selectbox(
-                "Chọn dòng để hủy:",
-                cancellable_leaves.index,
-                format_func=lambda x: f"Ngày đăng ký: {cancellable_leaves.loc[x, 'Ngày đăng ký']}"
+        # Calculate max cancellations for the first and second 6-month periods
+        first_half_start = pd.Timestamp(year=current_year, month=1, day=1)
+        first_half_end = pd.Timestamp(year=current_year, month=6, day=30)
+        second_half_start = pd.Timestamp(year=current_year, month=7, day=1)
+        second_half_end = pd.Timestamp(year=current_year, month=12, day=31)
+
+        # Count cancellations in each period
+        first_half_cancellations = filtered_leaves[
+            (filtered_leaves['Hủy phép'] == 'Hủy') &
+            (filtered_leaves['Người hủy'] == user_maNVYT) &
+            (filtered_leaves['ngayDangKy'] >= first_half_start) &
+            (filtered_leaves['ngayDangKy'] <= first_half_end)
+        ].shape[0]
+
+        second_half_cancellations = filtered_leaves[
+            (filtered_leaves['Hủy phép'] == 'Hủy') &
+            (filtered_leaves['Người hủy'] == user_maNVYT) &
+            (filtered_leaves['ngayDangKy'] >= second_half_start) &
+            (filtered_leaves['ngayDangKy'] <= second_half_end)
+        ].shape[0]
+
+        max_cancellations_per_period = 2  # Easy to change cancellation limit here
+
+        # Display cancellation limits for both periods
+        if filtered_leaves['ngayDangKy'].between(first_half_start, first_half_end).any():
+            st.write(
+                f"Trong 6 tháng đầu năm, bạn đã hủy {first_half_cancellations} lần. "
+                f"Bạn có thể hủy thêm {max(0, max_cancellations_per_period - first_half_cancellations)} lần."
             )
 
-            if st.button("Hủy phép"):
-                # Update the specific row in the Google Sheet
-                row_index = cancel_row + 2  # Account for 1-based indexing in Google Sheets and header row
-                sheets_service.spreadsheets().values().update(
-                    spreadsheetId=LEAVE_SHEET_ID,
-                    range=f"Sheet1!G{row_index}:H{row_index}",
-                    valueInputOption="RAW",
-                    body={"values": [["Hủy", user_maNVYT]]}  # Update Hủy phép and Người hủy columns
-                ).execute()
+        if filtered_leaves['ngayDangKy'].between(second_half_start, second_half_end).any():
+            st.write(
+                f"Trong 6 tháng cuối năm, bạn đã hủy {second_half_cancellations} lần. "
+                f"Bạn có thể hủy thêm {max(0, max_cancellations_per_period - second_half_cancellations)} lần."
+            )
 
-                # Refresh the data
-                leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
-                st.session_state["leave_df"] = leave_df
-                st.success("Đã hủy phép thành công. Dữ liệu đã được làm mới!")
+        # Allow user to cancel if within limit
+        total_cancellations = first_half_cancellations + second_half_cancellations
+        if total_cancellations < max_cancellations_per_period:
+            # Filter leaves where 'Hủy phép' is empty
+            cancellable_leaves = filtered_leaves[filtered_leaves['Hủy phép'].isnull() | (filtered_leaves['Hủy phép'] == "")]
+            
+            if not cancellable_leaves.empty:
+                cancel_row = st.selectbox(
+                    "Chọn dòng để hủy:",
+                    cancellable_leaves.index,
+                    format_func=lambda x: f"Ngày đăng ký: {cancellable_leaves.loc[x, 'Ngày đăng ký']}"
+                )
 
-                # Reload user-specific leaves
-                user_leaves = leave_df[leave_df['maNVYT'] == user_maNVYT]
-
-                if not user_leaves.empty:
-                    user_leaves['ngayDangKy'] = pd.to_datetime(user_leaves['ngayDangKy'], errors='coerce')
-                    user_leaves['ngayDangKy_display'] = user_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
-                    st.dataframe(
-                        user_leaves.rename(columns={
-                            'tenNhanVien': 'Họ tên',
-                            'ngayDangKy_display': 'Ngày đăng ký',
-                            'loaiPhep': 'Loại phép',
-                            'thoiGianDangKy': 'Thời gian đăng ký',
-                            'DuyetPhep': 'Duyệt',
-                            'Hủy phép': 'Hủy phép',
-                            'nguoiHủy': 'Người hủy'
-                        })[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt', 'Hủy phép']],
-                        use_container_width=True
-                    )
-                else:
-                    st.warning("Không có phép nào sau khi hủy.")
+                if st.button("Hủy phép"):
+                    # Update the specific row in the Google Sheet
+                    row_index = cancel_row + 2  # Account for 1-based indexing in Google Sheets and header row
+                    sheets_service.spreadsheets().values().update(
+                        spreadsheetId=LEAVE_SHEET_ID,
+                        range=f"Sheet1!G{row_index}:H{row_index}",
+                        valueInputOption="RAW",
+                        body={"values": [["Hủy", user_maNVYT]]}  # Update Hủy phép and nguoiHuy columns
+                    ).execute()
+                    st.success("Đã hủy phép thành công.")
+            else:
+                st.warning("Không có phép nào có thể hủy.")
         else:
-            st.warning("Không có phép nào có thể hủy.")
+            st.warning("Bạn đã đạt giới hạn hủy phép trong giai đoạn này.")
     else:
         st.write("Không có phép nào được đăng ký bởi bạn.")
 
