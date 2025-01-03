@@ -543,10 +543,45 @@ def admin_disapproved_leaves():
         st.write("Không có phép nào đã được duyệt.")
 
 
+# Function to change password
+def change_password():
+    user_info = st.session_state['user_info']
+    st.subheader("Thay đổi mật khẩu")
+    
+    # Input fields for old password, new password, and confirmation
+    old_password = st.text_input("Mật khẩu cũ", type="password")
+    new_password = st.text_input("Mật khẩu mới", type="password")
+    confirm_password = st.text_input("Xác nhận mật khẩu mới", type="password")
+    
+    if st.button("Cập nhật mật khẩu"):
+        # Fetch user info from the sheet
+        nhanvien_df = st.session_state['nhanvien_df']
+        user_row = nhanvien_df[nhanvien_df['maNVYT'] == user_info['maNVYT']]
+        
+        # Check if old password matches
+        if not user_row.empty and user_row.iloc[0]['matKhau'] == old_password:
+            if new_password == confirm_password:
+                # Update the password in the Google Sheet
+                try:
+                    # Find the row to update
+                    row_index = nhanvien_df[nhanvien_df['maNVYT'] == user_info['maNVYT']].index[0] + 2  # Account for header
+                    sheets_service.spreadsheets().values().update(
+                        spreadsheetId=NHANVIEN_SHEET_ID,
+                        range=f"Sheet1!C{row_index}",  # Assuming 'matKhau' is in column C
+                        valueInputOption="RAW",
+                        body={"values": [[new_password]]}
+                    ).execute()
+                    st.success("Mật khẩu đã được thay đổi thành công!")
+                except Exception as e:
+                    st.error(f"Lỗi khi thay đổi mật khẩu: {e}")
+            else:
+                st.error("Mật khẩu mới và xác nhận mật khẩu không khớp.")
+        else:
+            st.error("Mật khẩu cũ không đúng.")
 
 
 
-
+# Main app logic
 # Main app logic
 if not st.session_state.get('is_logged_in', False):
     st.title("Đăng ký phép/bù - Khoa Xét nghiệm")
@@ -584,7 +619,7 @@ else:
         st.stop()  # Stop the app to ensure the session is cleared
 
     # Define pages
-    pages = ["Danh sách đăng ký phép", "Phép của tôi", "Đăng ký phép mới"]
+    pages = ["Danh sách đăng ký phép", "Phép của tôi", "Đăng ký phép mới", "Thay đổi mật khẩu"]
     if role == "admin":
         pages.extend(["Duyệt phép", "Hủy duyệt phép"])  # Extend list for admin pages
 
@@ -607,6 +642,9 @@ else:
     elif page == "Hủy duyệt phép" and role == "admin":
         st.subheader("Hủy duyệt phép")  # Smaller than st.title
         admin_disapproved_leaves()
+    elif page == "Thay đổi mật khẩu":
+        st.subheader("Thay đổi mật khẩu")  # Smaller than st.title
+        change_password()
 
     # Footer
     st.sidebar.markdown("---")
