@@ -7,30 +7,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import time
 import locale
-import streamlit.components.v1 as components
 
-
-# Full-Screen JavaScript Functionality
-full_screen_js = """
-<script>
-function enableFullScreen() {
-    var elem = document.documentElement; // Get the document's full element
-    if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-    } else if (elem.mozRequestFullScreen) { // Firefox
-        elem.mozRequestFullScreen();
-    } else if (elem.webkitRequestFullscreen) { // Chrome, Safari, and Opera
-        elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) { // IE/Edge
-        elem.msRequestFullscreen();
-    }
-}
-</script>
-<button onclick="enableFullScreen()" style="position:fixed;top:10px;right:10px;z-index:1000;">Full Screen</button>
-"""
-
-# Insert the full-screen button into the app
-components.html(full_screen_js, height=50)
 
 # Google Sheets document IDs and ranges
 
@@ -318,8 +295,24 @@ def display_user_leaves():
 # Registration form for leaves
 def display_registration_form():
     user_info = st.session_state['user_info']
+    current_date = datetime.now().date()
 
-    registration_date = st.date_input("Ngày đăng ký", key="registration_date")
+    # Define allowed date ranges
+    if current_date < datetime(current_date.year, 7, 1).date():
+        min_date = datetime(current_date.year, 1, 1).date()
+        max_date = datetime(current_date.year, 7, 31).date()
+    else:
+        min_date = datetime(current_date.year, 7, 1).date()
+        max_date = datetime(current_date.year + 1, 1, 31).date()
+
+    # Restrict date input to the defined range
+    registration_date = st.date_input(
+        "Ngày đăng ký", 
+        value=min_date, 
+        min_value=min_date, 
+        max_value=max_date, 
+        key="registration_date"
+    )
 
     st.write("### Chọn loại phép:")
     leave_type = st.selectbox("Loại phép", options=["Phép Ngày", "Phép Sáng", "Phép Chiều", "Bù Ngày", "Bù Sáng", "Bù Chiều"], key="leave_type")
@@ -327,7 +320,19 @@ def display_registration_form():
     if st.button("Xác nhận đăng ký"):
         timestamp = datetime.now(pytz.timezone("Asia/Ho_Chi_Minh")).strftime("%Y-%m-%d %H:%M:%S")
         
-        # Ensure maNVYT is a string and matches exactly what is fetched
+        # Fetch existing registrations to check for duplicates
+        leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+        user_registrations = leave_df[
+            (leave_df['maNVYT'] == str(user_info['maNVYT'])) &
+            (leave_df['ngayDangKy'] == str(registration_date)) &
+            (leave_df['loaiPhep'] == leave_type)
+        ]
+
+        if not user_registrations.empty:
+            st.warning("Bạn đã đăng ký loại phép này cho ngày này. Vui lòng kiểm tra lại.")
+            return
+
+        # New registration data
         new_registration = [
             [
                 str(user_info['maNVYT']),  # Ensure maNVYT is stored as a string
@@ -346,6 +351,7 @@ def display_registration_form():
             st.success("Đăng ký thành công!")
         except Exception as e:
             st.error(f"Lỗi khi ghi dữ liệu vào Google Sheets: {e}")
+
 
 # Admin approval page
 def admin_approval_page():
