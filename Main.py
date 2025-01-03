@@ -554,30 +554,41 @@ def change_password():
     confirm_password = st.text_input("Xác nhận mật khẩu mới", type="password")
     
     if st.button("Cập nhật mật khẩu"):
-        # Fetch user info from the sheet
+        # Fetch user info from the session state
         nhanvien_df = st.session_state['nhanvien_df']
+        
+        # Find the row corresponding to the current user's maNVYT
         user_row = nhanvien_df[nhanvien_df['maNVYT'] == user_info['maNVYT']]
         
-        # Check if old password matches
-        if not user_row.empty and user_row.iloc[0]['matKhau'] == old_password:
-            if new_password == confirm_password:
-                # Update the password in the Google Sheet
-                try:
-                    # Find the row to update
-                    row_index = nhanvien_df[nhanvien_df['maNVYT'] == user_info['maNVYT']].index[0] + 2  # Account for header
-                    sheets_service.spreadsheets().values().update(
-                        spreadsheetId=NHANVIEN_SHEET_ID,
-                        range=f"Sheet1!C{row_index}",  # Assuming 'matKhau' is in column C
-                        valueInputOption="RAW",
-                        body={"values": [[new_password]]}
-                    ).execute()
-                    st.success("Mật khẩu đã được thay đổi thành công!")
-                except Exception as e:
-                    st.error(f"Lỗi khi thay đổi mật khẩu: {e}")
+        if not user_row.empty:
+            # Validate old password
+            if user_row.iloc[0]['matKhau'] == old_password:
+                if new_password == confirm_password:
+                    try:
+                        # Find the row index in Google Sheets
+                        row_index = nhanvien_df[nhanvien_df['maNVYT'] == user_info['maNVYT']].index[0] + 2  # Add 2 for 1-based indexing and header row
+                        
+                        # Update the password in the Google Sheet
+                        sheets_service.spreadsheets().values().update(
+                            spreadsheetId=NHANVIEN_SHEET_ID,
+                            range=f"Sheet1!C{row_index}",  # Assuming 'matKhau' is in column C
+                            valueInputOption="RAW",
+                            body={"values": [[new_password]]}
+                        ).execute()
+                        
+                        st.success("Mật khẩu đã được thay đổi thành công!")
+                        
+                        # Refresh the session state to reflect the change
+                        st.session_state['nhanvien_df'] = fetch_sheet_data(NHANVIEN_SHEET_ID, NHANVIEN_SHEET_RANGE)
+                    except Exception as e:
+                        st.error(f"Lỗi khi thay đổi mật khẩu: {e}")
+                else:
+                    st.error("Mật khẩu mới và xác nhận mật khẩu không khớp.")
             else:
-                st.error("Mật khẩu mới và xác nhận mật khẩu không khớp.")
+                st.error("Mật khẩu cũ không đúng.")
         else:
-            st.error("Mật khẩu cũ không đúng.")
+            st.error("Không tìm thấy thông tin tài khoản.")
+
 
 
 
