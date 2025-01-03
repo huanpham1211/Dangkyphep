@@ -152,15 +152,8 @@ def display_all_leaves():
 
 # Display user's leaves with the ability to cancel
 def display_user_leaves():
-    # Refresh button
-    if st.button("Làm mới dữ liệu"):
-        # Fetch fresh data and store it in session state
-        leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
-        st.session_state['leave_df'] = leave_df
-        st.success("Dữ liệu đã được làm mới!")
-
-    # Fetch leave data from session state or re-fetch if not available
-    leave_df = st.session_state.get('leave_df', fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE))
+    # Fetch leave data
+    leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
     user_info = st.session_state['user_info']
 
     # Ensure the maNVYT column exists and filter data by the logged-in user's maNVYT
@@ -190,8 +183,8 @@ def display_user_leaves():
             'loaiPhep': 'Loại phép',
             'thoiGianDangKy': 'Thời gian đăng ký',
             'DuyetPhep': 'Duyệt',
-            'Hủy phép': 'Hủy phép',
-            'nguoiHủy': 'Người hủy'
+            'HuyPhep': 'Hủy phép',
+            'nguoiHuy': 'Người hủy'
         })
 
         # Date filter
@@ -283,7 +276,7 @@ def display_user_leaves():
                         spreadsheetId=LEAVE_SHEET_ID,
                         range=f"Sheet1!G{row_index}:H{row_index}",
                         valueInputOption="RAW",
-                        body={"values": [["Hủy", user_maNVYT]]}  # Update Hủy phép and nguoiHuy columns
+                        body={"values": [["Hủy", user_maNVYT]]}  # Update HuyPhep and nguoiHuy columns
                     ).execute()
                     st.success("Đã hủy phép thành công.")
             else:
@@ -292,7 +285,6 @@ def display_user_leaves():
             st.warning("Bạn đã đạt giới hạn hủy phép trong giai đoạn này.")
     else:
         st.write("Không có phép nào được đăng ký bởi bạn.")
-
 
 
 
