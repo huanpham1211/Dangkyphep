@@ -278,18 +278,33 @@ def display_user_leaves():
                         valueInputOption="RAW",
                         body={"values": [["Hủy", user_maNVYT]]}  # Update HuyPhep and nguoiHuy columns
                     ).execute()
+                    
+                    # Refresh the data
+                    leave_df = fetch_sheet_data(LEAVE_SHEET_ID, LEAVE_SHEET_RANGE)
+                    user_leaves = leave_df[leave_df['maNVYT'] == user_maNVYT]
+                    
+                    # Reapply filtering
+                    user_leaves['ngayDangKy'] = pd.to_datetime(user_leaves['ngayDangKy'], errors='coerce')
+                    user_leaves = user_leaves[user_leaves['ngayDangKy'].notna()]
+                    user_leaves['ngayDangKy_display'] = user_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
+                    filtered_leaves = user_leaves[
+                        (user_leaves['ngayDangKy'] >= pd.Timestamp(start_date)) &
+                        (user_leaves['ngayDangKy'] <= pd.Timestamp(end_date))
+                    ]
+                    
+                    # Refresh the displayed table
                     st.success("Đã hủy phép thành công.")
+                    st.dataframe(
+                        filtered_leaves[['Họ tên', 'Ngày đăng ký', 'Loại phép', 'Thời gian đăng ký', 'Duyệt', 'Hủy phép']],
+                        use_container_width=True, hide_index=True
+                    )
+
             else:
                 st.warning("Không có phép nào có thể hủy.")
         else:
             st.warning("Bạn đã đạt giới hạn hủy phép trong giai đoạn này.")
     else:
         st.write("Không có phép nào được đăng ký bởi bạn.")
-
-
-
-
-
 
 
 
@@ -591,10 +606,6 @@ def change_password():
             st.error("Không tìm thấy thông tin tài khoản.")
 
 
-
-
-
-# Main app logic
 # Main app logic
 if not st.session_state.get('is_logged_in', False):
     st.title("Đăng ký phép/bù - Khoa Xét nghiệm")
