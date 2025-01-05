@@ -356,7 +356,8 @@ def display_registration_form():
         ]
 
         if not user_registrations.empty:
-            st.warning("Bạn đã đăng ký loại phép này cho ngày này. Vui lòng kiểm tra lại.")
+            existing_dates = user_registrations['ngayDangKy'].tolist()
+            st.warning(f"Bạn đã đăng ký {leave_type} cho ngày: {', '.join(existing_dates)}. Vui lòng kiểm tra lại.")
             return
 
         # New registration data
