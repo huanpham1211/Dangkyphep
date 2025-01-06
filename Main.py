@@ -113,7 +113,8 @@ def display_all_leaves():
     filtered_leaves = leave_df[
         (leave_df['ngayDangKy'] >= pd.Timestamp(start_date)) &
         (leave_df['ngayDangKy'] <= pd.Timestamp(end_date))
-    ].sort_values(by='ngayDangKy', ascending=True)  # Sort by `ngayDangKy` ASC
+    ].sort_values(by=['ngayDangKy', 'thoiGianDangKy'], ascending=[True, True])  # Sort by `ngayDangKy` and then `thoiGianDangKy` ASC
+
 
     # Format dates as `dd/mm/yyyy`
     filtered_leaves['ngayDangKy'] = filtered_leaves['ngayDangKy'].dt.strftime('%d/%m/%Y')
