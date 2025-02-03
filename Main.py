@@ -5,6 +5,7 @@ import json
 import pytz
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 import time
 import locale
 
@@ -31,25 +32,41 @@ credentials = service_account.Credentials.from_service_account_info(
 sheets_service = build('sheets', 'v4', credentials=credentials)
 
 # Function to fetch data from a Google Sheet
-def fetch_sheet_data(sheet_id, range_name):
-    result = sheets_service.spreadsheets().values().get(
-        spreadsheetId=sheet_id,
-        range=range_name
-    ).execute()
-    values = result.get('values', [])
-    
-    if not values:
-        st.error("No data found in the specified range.")
-        return pd.DataFrame()
+def fetch_sheet_data(sheet_id, range_name, max_retries=3):
+    """Fetch data from a Google Sheet and return it as a Pandas DataFrame."""
+    attempt = 0
+    while attempt < max_retries:
+        try:
+            result = sheets_service.spreadsheets().values().get(
+                spreadsheetId=sheet_id,
+                range=range_name
+            ).execute()
+            values = result.get('values', [])
+            
+            if not values:
+                st.warning("⚠️ Không tìm thấy dữ liệu trong phạm vi được chỉ định.")
+                return pd.DataFrame()
 
-    headers = values[0]
-    data = values[1:]
+            headers = values[0]  # Extract headers
+            data = values[1:]  # Extract data rows
+            
+            # Ensure each row has the same number of columns as headers
+            data = [row + [""] * (len(headers) - len(row)) for row in data]
 
-    # Ensure all rows have the same number of columns as headers
-    data = [row + [""] * (len(headers) - len(row)) for row in data]
+            return pd.DataFrame(data, columns=headers)
 
-    # Create DataFrame
-    return pd.DataFrame(data, columns=headers)
+        except HttpError as e:
+            attempt += 1
+            st.error(f"❌ Lỗi khi truy xuất dữ liệu từ Google Sheets: {e}")
+            if attempt < max_retries:
+                wait_time = 2 ** attempt  # Exponential backoff
+                st.warning(f"🔄 Thử lại sau {wait_time} giây...")
+                time.sleep(wait_time)
+            else:
+                st.error("🚫 Không thể tải dữ liệu sau nhiều lần thử. Vui lòng kiểm tra API.")
+                return pd.DataFrame()
+
+    return pd.DataFrame()  # Return empty DataFrame if all retries fail
 
 
 
