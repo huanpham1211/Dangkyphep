@@ -31,9 +31,15 @@ credentials = service_account.Credentials.from_service_account_info(
 # Initialize the Google Sheets API client
 sheets_service = build('sheets', 'v4', credentials=credentials)
 
-# Function to fetch data from a Google Sheet
-def fetch_sheet_data(sheet_id, range_name, max_retries=3):
-    """Fetch data from a Google Sheet and return it as a Pandas DataFrame."""
+
+def fetch_sheet_data(sheet_id, range_name, max_retries=3, cache_time=60):
+    """Fetch Google Sheets data with caching and error handling."""
+    
+    # Use session state to cache the data
+    cache_key = f"sheet_data_{sheet_id}_{range_name}"
+    if cache_key in st.session_state and time.time() - st.session_state[cache_key]["timestamp"] < cache_time:
+        return st.session_state[cache_key]["data"]
+
     attempt = 0
     while attempt < max_retries:
         try:
@@ -42,31 +48,33 @@ def fetch_sheet_data(sheet_id, range_name, max_retries=3):
                 range=range_name
             ).execute()
             values = result.get('values', [])
-            
+
             if not values:
                 st.warning("⚠️ Không tìm thấy dữ liệu trong phạm vi được chỉ định.")
                 return pd.DataFrame()
 
-            headers = values[0]  # Extract headers
-            data = values[1:]  # Extract data rows
-            
-            # Ensure each row has the same number of columns as headers
+            headers = values[0]
+            data = values[1:]
             data = [row + [""] * (len(headers) - len(row)) for row in data]
 
-            return pd.DataFrame(data, columns=headers)
+            df = pd.DataFrame(data, columns=headers)
+
+            # Cache the result in session state
+            st.session_state[cache_key] = {"data": df, "timestamp": time.time()}
+            return df
 
         except HttpError as e:
             attempt += 1
-            st.error(f"❌ Lỗi khi truy xuất dữ liệu từ Google Sheets: {e}")
-            if attempt < max_retries:
-                wait_time = 2 ** attempt  # Exponential backoff
-                st.warning(f"🔄 Thử lại sau {wait_time} giây...")
+            if "RATE_LIMIT_EXCEEDED" in str(e):
+                wait_time = 10  # Wait longer to avoid rate limit
+                st.warning(f"🔄 Quota exceeded. Thử lại sau {wait_time} giây...")
                 time.sleep(wait_time)
             else:
-                st.error("🚫 Không thể tải dữ liệu sau nhiều lần thử. Vui lòng kiểm tra API.")
+                st.error(f"❌ Lỗi API: {e}")
                 return pd.DataFrame()
 
     return pd.DataFrame()  # Return empty DataFrame if all retries fail
+
 
 
 
