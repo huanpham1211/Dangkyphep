@@ -653,6 +653,7 @@ if not st.session_state.get('is_logged_in', False):
                 }
                 st.session_state['is_logged_in'] = True
                 st.sidebar.success("Đăng nhập thành công")
+                st.rerun()
             else:
                 st.error("Sai tên tài khoản hoặc mật khẩu")
 else:
