@@ -9,6 +9,8 @@ from googleapiclient.errors import HttpError
 import time
 import locale
 
+st.set_page_config(page_title="Đăng ký phép KXN", page_icon="🏖️")
+
 
 # Google Sheets document IDs and ranges
 
